@@ -3624,7 +3624,10 @@ function renderAll() {
   if (miniStats) {
     miniStats.innerHTML = STATS.map(k => `
       <div class="mini-stat" title="タップしてステータス・プロフィール詳細を表示">
-        <div class="mini-stat-top"><span>${STAT_ICON[k]}${LABEL[k]}</span><b>${S[k]}</b></div>
+        <div class="mini-stat-top">
+          <span class="mini-stat-label"><i class="mini-stat-ic">${STAT_ICON[k]}</i><span class="mini-stat-txt">${LABEL[k]}</span></span>
+          <b class="mini-stat-val">${S[k]}</b>
+        </div>
         <div class="mini-bar"><div class="bar-fill ${k} ${S[k] < 20 ? 'low' : ''}" style="width:${S[k]}%"></div></div>
       </div>`).join('');
   }

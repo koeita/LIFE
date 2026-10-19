@@ -251,10 +251,15 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
 .mini-stats:hover .mini-stat { background: rgba(255,255,255,.08); }
 .mini-stat-top {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: .72rem; margin-bottom: 4px; white-space: nowrap; gap: 2px;
+  font-size: .72rem; margin-bottom: 3px; white-space: nowrap; gap: 2px;
 }
-.mini-stat-top span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
-.mini-stat-top b { font-family: var(--font-en); font-size: .8rem; color: var(--text); flex-shrink: 0; }
+.mini-stat-label {
+  display: inline-flex; align-items: center; gap: 2px;
+  color: var(--muted); min-width: 0; overflow: hidden;
+}
+.mini-stat-ic { font-style: normal; flex-shrink: 0; font-size: .8em; }
+.mini-stat-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-stat-val { font-family: var(--font-en); font-size: .8rem; color: var(--text); flex-shrink: 0; }
 .mini-bar { height: 4px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
 
 /* ===== タブナビゲーション ===== */
@@ -674,9 +679,18 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   .lifebar-wrap { grid-column: 1 / -1; }
   .lifebar-label { margin-bottom: 4px; font-size: .74rem; }
   .lifebar { height: 6px; }
-  .mini-stats { gap: 6px; padding-top: 6px; }
-  .mini-stat { padding: 4px 6px; }
-  .mini-stat-top { font-size: .7rem; }
+  .mini-stats { gap: 4px; padding-top: 6px; }
+  .mini-stat { padding: 4px 4px 3px; border-radius: 8px; }
+  .mini-stat-top { font-size: .68rem; margin-bottom: 2px; }
+  .mini-stat-label { gap: 2px; }
+  .mini-stat-ic { font-size: .85em; }
+  .mini-stat-txt { font-size: .68rem; }
+  .mini-stat-val { font-size: .75rem; }
+  @media (max-width: 440px) {
+    .mini-stat-txt { display: none; }
+    .mini-stat-ic { font-size: 1.05em; }
+    .mini-stat-top { justify-content: center; gap: 4px; }
+  }
 
   /* タブバー */
   .game-tabs { padding: 4px; gap: 4px; margin-bottom: 10px; }
