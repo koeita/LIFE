@@ -2494,7 +2494,7 @@ const EVENTS = [
       },
       {
         label: '施設にお願いする（400万円）',
-        disabled: S.money < 400,
+        disabled: () => !S || S.money < 400,
         fn() {
           S.flags.parent_care = true;
           fx({ money: -400, happy: -2 });
@@ -3812,7 +3812,7 @@ function runEvent(ev) {
       const isSinglePrimary = visibleChoices.length === 1;
       b.className = 'choice' + (isSinglePrimary ? ' primary' : c.cancel ? ' cancel' : c.dangerFill ? ' danger-fill' : c.danger ? ' danger' : '');
       b.id = `choice-${i + 1}`;
-      b.disabled = !!c.disabled;
+      b.disabled = typeof c.disabled === 'function' ? !!c.disabled() : !!c.disabled;
       b.innerHTML = formatChoiceLabel(c);
 
       const executeChoice = () => {
