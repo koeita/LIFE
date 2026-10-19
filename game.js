@@ -13,8 +13,40 @@ const chance = p => Math.random() < p;
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-const STATS = ['health', 'smarts', 'looks', 'happy'];
-const LABEL = { health: '健康', smarts: '知力', looks: '魅力', happy: '幸福', money: 'お金' };
+const STATS = ['smarts', 'fitness', 'social', 'creativity', 'happy'];
+const LABEL = { smarts: '知力', fitness: '体力', social: '社交', creativity: '創造', happy: '幸福', money: 'お金' };
+const STAT_ICON = { smarts: '🧠', fitness: '💪', social: '🤝', creativity: '🎨', happy: '😊' };
+
+// ---------- 性格システム（MBTI風 16タイプ） ----------
+const MBTI_TYPES = {
+  'INTJ': { name: '建築家', axis: 'INTJ', desc: '戦略的で知的好奇心が旺盛。知力・創造が伸びやすい。', bias: { smarts: 1.25, creativity: 1.15 } },
+  'INTP': { name: '論理学者', axis: 'INTP', desc: '独自の着眼点を持つ探求者。知力が抜群に伸びやすい。', bias: { smarts: 1.35, social: 0.85 } },
+  'ENTJ': { name: '指揮官', axis: 'ENTJ', desc: '大胆なリーダー。知力と社交力で人の上に立つ。', bias: { smarts: 1.2, social: 1.2 } },
+  'ENTP': { name: '討論者', axis: 'ENTP', desc: '機知に富んだ挑戦者。社交と創造でチャンスを掴む。', bias: { creativity: 1.25, social: 1.15 } },
+  'INFJ': { name: '提唱者', axis: 'INFJ', desc: '理想主義で洞察力に富む。知力と幸福度が安定しやすい。', bias: { smarts: 1.15, happy: 1.15 } },
+  'INFP': { name: '仲介者', axis: 'INFP', desc: '感受性豊かな夢想家。創造と幸福感が伸びやすい。', bias: { creativity: 1.3, fitness: 0.85 } },
+  'ENFJ': { name: '主人公', axis: 'ENFJ', desc: '情熱的でカリスマ性がある。社交と幸福度が抜群。', bias: { social: 1.3, happy: 1.1 } },
+  'ENFP': { name: '運動家', axis: 'ENFP', desc: '自由奔放で創造的。社交と創造がグングン伸びる。', bias: { social: 1.2, creativity: 1.2 } },
+  'ISTJ': { name: '管理者', axis: 'ISTJ', desc: '実務的で極めて誠実。知力と体力が堅実に伸びる。', bias: { smarts: 1.15, fitness: 1.15 } },
+  'ISFJ': { name: '擁護者', axis: 'ISFJ', desc: '献身的で温かい。体力と幸福が安定して長寿向き。', bias: { fitness: 1.15, happy: 1.15 } },
+  'ESTJ': { name: '幹部', axis: 'ESTJ', desc: '組織をまとめる統率者。体力と社交で出世に強い。', bias: { fitness: 1.2, social: 1.15 } },
+  'ESFJ': { name: '領事', axis: 'ESFJ', desc: '社交的で思いやり深い。社交力とお金管理が得意。', bias: { social: 1.3, smarts: 0.9 } },
+  'ISTP': { name: '巨匠', axis: 'ISTP', desc: '冷静で実践的な職人肌。体力と創造を兼ね備える。', bias: { fitness: 1.25, creativity: 1.15 } },
+  'ISFP': { name: '冒険家', axis: 'ISFP', desc: '柔軟で魅力的な芸術肌。創造と感性が際立つ。', bias: { creativity: 1.25, social: 1.05 } },
+  'ESTP': { name: '起業家', axis: 'ESTP', desc: 'エネルギッシュな行動派。体力と社交で道を切り拓く。', bias: { fitness: 1.25, social: 1.2 } },
+  'ESFP': { name: 'エンターテイナー', axis: 'ESFP', desc: '場を明るくする人気者。社交と幸福感が常に高い。', bias: { social: 1.3, happy: 1.2 } },
+};
+
+function randomMBTI() {
+  const e_i = chance(0.5) ? 'E' : 'I';
+  const s_n = chance(0.5) ? 'S' : 'N';
+  const t_f = chance(0.5) ? 'T' : 'F';
+  const j_p = chance(0.5) ? 'J' : 'P';
+  return e_i + s_n + t_f + j_p;
+}
+function mbtiObj(type) {
+  return MBTI_TYPES[type] || MBTI_TYPES['ENFP'];
+}
 const EDU_LABEL = ['なし', '中卒', '高卒', '大卒', '大学院卒'];
 const LEVELS = ['一般', '主任', '課長', '部長', '役員'];
 
@@ -135,28 +167,28 @@ const fmtMoney = m => {
 // ---------- 職業・才能・資産データ ----------
 const JOBS = [
   // 学歴・文理不問
-  { name: 'フリーター', base: 180, edu: 0, s: 0, l: 0, icon: '🧃' },
-  { name: '動画配信者', base: 420, edu: 0, s: 20, l: 55, icon: '🎥' },
-  { name: '工場スタッフ', base: 320, edu: 1, s: 0, l: 0, icon: '🏭', corp: true },
-  { name: '販売スタッフ', base: 300, edu: 1, s: 20, l: 40, icon: '🛍️', corp: true },
-  { name: '料理人', base: 350, edu: 1, s: 20, l: 0, icon: '🍳' },
-  { name: '小説家・漫画家', base: 450, edu: 1, s: 55, l: 0, icon: '🖋️', tracks: ['bun'] },
-  { name: '営業職', base: 420, edu: 2, s: 35, l: 50, icon: '💼', corp: true },
-  { name: '公務員', base: 450, edu: 2, s: 55, l: 0, icon: '🏛️', corp: true },
-  { name: 'デザイナー', base: 450, edu: 3, s: 45, l: 55, icon: '🎨' },
-  { name: '商社マン', base: 800, edu: 3, s: 70, l: 60, icon: '🌏', corp: true },
+  { name: 'フリーター', base: 180, edu: 0, req: {}, icon: '🧃', desc: '気ままに働く自由人' },
+  { name: '動画配信者', base: 420, edu: 0, req: { creativity: 55, social: 40 }, icon: '🎥', desc: '企画力と発信力で勝負' },
+  { name: '工場スタッフ', base: 320, edu: 1, req: { fitness: 35 }, icon: '🏭', corp: true, desc: 'ものづくりの現場を支える' },
+  { name: '販売スタッフ', base: 300, edu: 1, req: { social: 38 }, icon: '🛍️', corp: true, desc: '丁寧な接客とコミュニケーション' },
+  { name: '料理人', base: 350, edu: 1, req: { fitness: 38, creativity: 30 }, icon: '🍳', desc: '体力と味のセンスを磨く職人' },
+  { name: '小説家・漫画家', base: 450, edu: 1, req: { creativity: 65, smarts: 45 }, icon: '🖋️', tracks: ['bun'], desc: '独自の世界観を創り出す' },
+  { name: '営業職', base: 420, edu: 2, req: { social: 55, fitness: 40 }, icon: '💼', corp: true, desc: '人脈と提案力で数字を稼ぐ' },
+  { name: '公務員', base: 450, edu: 2, req: { smarts: 55, fitness: 35 }, icon: '🏛️', corp: true, desc: '安定した行政サービス' },
+  { name: 'デザイナー', base: 450, edu: 3, req: { creativity: 60, smarts: 40 }, icon: '🎨', desc: '視覚表現とブランディング' },
+  { name: '商社マン', base: 800, edu: 3, req: { smarts: 68, social: 65, fitness: 50 }, icon: '🌏', corp: true, desc: '激務をタフに乗り切るグローバル人材' },
 
   // 理系向け
-  { name: 'エンジニア', base: 550, edu: 3, s: 60, l: 0, icon: '💻', corp: true, tracks: ['ri', 'med'], techOnly: true },
-  { name: '研究開発職', base: 650, edu: 3, s: 72, l: 0, icon: '🧬', corp: true, tracks: ['ri', 'med'], techOnly: true },
-  { name: 'AI研究者', base: 950, edu: 3, s: 80, l: 0, icon: '🔬', corp: true, tracks: ['ri'], techOnly: true, reqGrad: true },
+  { name: 'エンジニア', base: 550, edu: 3, req: { smarts: 60, creativity: 45 }, icon: '💻', corp: true, tracks: ['ri', 'med'], techOnly: true, desc: 'テクノロジーで課題を解決' },
+  { name: '研究開発職', base: 650, edu: 3, req: { smarts: 72, creativity: 50 }, icon: '🧬', corp: true, tracks: ['ri', 'med'], techOnly: true, desc: '最先端の科学技術を探求' },
+  { name: 'AI研究者', base: 950, edu: 3, req: { smarts: 82, creativity: 60 }, icon: '🔬', corp: true, tracks: ['ri'], techOnly: true, reqGrad: true, desc: '次世代人工知能の先端開発' },
 
   // 文系向け
-  { name: '弁護士', base: 1100, edu: 3, s: 85, l: 0, icon: '⚖️', tracks: ['bun'], profOnly: true },
+  { name: '弁護士', base: 1100, edu: 3, req: { smarts: 85, social: 55 }, icon: '⚖️', tracks: ['bun'], profOnly: true, desc: '法と正義で依頼者を守る' },
 
   // 医療系（医歯薬）
-  { name: '看護師', base: 480, edu: 3, s: 50, l: 0, icon: '🩺', tracks: ['med', 'ri'], profOnly: true },
-  { name: '医師', base: 1300, edu: 3, s: 88, l: 0, icon: '🥼', tracks: ['med'], profOnly: true },
+  { name: '看護師', base: 480, edu: 3, req: { smarts: 50, fitness: 52, social: 45 }, icon: '🩺', tracks: ['med', 'ri'], profOnly: true, desc: '医療現場で患者に寄り添う' },
+  { name: '医師', base: 1300, edu: 3, req: { smarts: 88, fitness: 55, social: 45 }, icon: '🥼', tracks: ['med'], profOnly: true, desc: '高い専門知識と激務に耐える体力' },
 ];
 
 function trackLabel(track = null) {
@@ -175,11 +207,11 @@ const SPECIAL_JOBS = [
 
 const TRAITS = [
   { id: 'genius', icon: '🧠', name: '天才肌', desc: '知力が伸びやすく、受験や研究に強い' },
-  { id: 'iron', icon: '💪', name: '鋼の肉体', desc: '健康が伸びやすく、病気や老化に強い' },
-  { id: 'charisma', icon: '✨', name: 'カリスマ', desc: '魅力が伸びやすく、芸能・配信・選挙に強い' },
+  { id: 'iron', icon: '💪', name: '鋼の肉体', desc: '体力が伸びやすく、病気や老化・激務に強い' },
+  { id: 'charisma', icon: '✨', name: 'カリスマ', desc: '社交が伸びやすく、人望・営業・選挙に強い' },
   { id: 'lucky', icon: '🍀', name: '強運の持ち主', desc: '受験・起業・投資・宝くじの成功率が上がる' },
-  { id: 'artist', icon: '🎨', name: '芸術センス', desc: 'クリエイター職や副業・趣味で才能を発揮' },
-  { id: 'beloved', icon: '💕', name: '愛され体質', desc: '恋愛・結婚が成就しやすく、夫婦仲が冷めにくい' },
+  { id: 'artist', icon: '🎨', name: '芸術センス', desc: '創造が伸びやすく、クリエイター職や副業で大活躍' },
+  { id: 'beloved', icon: '💕', name: '愛され体質', desc: '社交ボーナス＆恋愛・結婚が成就しやすく夫婦円満' },
   { id: 'merchant', icon: '💰', name: '商才', desc: '給与・副業・不動産の収入が+15%アップ' },
   { id: 'optimist', icon: '☀️', name: 'ポジティブ', desc: '幸福度が上がりやすく、落ち込みにくい' },
 ];
@@ -219,7 +251,7 @@ const SIDE_JOBS = [
     maxInc: 55,
     stat: 'smarts',
     trait: 'genius',
-    desc: '初期費用が少なく堅実。知力が高いほど案件単価アップ（年約30〜60万円）'
+    desc: '初期費用が少なく堅実。知力が高いほど案件単価アップ（年約25〜55万円）'
   },
   {
     id: 'creator',
@@ -227,26 +259,26 @@ const SIDE_JOBS = [
     cost: 35,
     minInc: 35,
     maxInc: 85,
-    stat: 'looks',
+    stat: 'creativity',
     trait: 'artist',
-    desc: '機材投資が必要。魅力や芸術センスが高いと高単価案件を獲得（年約40〜90万円）'
+    desc: '機材投資が必要。創造力が高いと高単価案件を獲得（年約35〜85万円）'
   },
   {
     id: 'reseller',
     name: '🛒 ネット物販・せどり',
     cost: 50,
     minInc: 45,
-    maxInc: 110,
-    stat: 'smarts',
+    maxInc: 100,
+    stat: 'social',
     trait: 'merchant',
-    desc: '仕入れ資金と商才が必要。波はあるが当たれば大きい（年約50〜120万円）'
+    desc: '仕入れ資金と社交・交渉力が必要。波はあるが当たれば大きい（年約45〜100万円）'
   }
 ];
 
 function calcSideJobIncome(side) {
   if (!side) return 0;
   const def = SIDE_JOBS.find(j => j.id === side.id) || SIDE_JOBS[0];
-  const statVal = (def.stat === 'looks' ? S.looks : S.smarts) || 50;
+  const statVal = S[def.stat] || 50;
   const statRatio = clamp(statVal / 100, 0.4, 1.3);
   let base = Math.round(def.minInc + (def.maxInc - def.minInc) * (statRatio - 0.4) / 0.9);
   if (hasTrait(def.trait)) base = Math.round(base * 1.25);
@@ -268,14 +300,14 @@ const HOUSES = [
   { id: 'tower', name: '🏙️ 都心タワーマンション', price: 10000, happy: 4, rentSave: 70, desc: '最高の眺望とステータス（毎年 幸福+4・魅力+1）' },
 ];
 const CARS = [
-  { id: 'compact', name: '🚗 コンパクトカー', price: 200, fx: { happy: 5, looks: 2 }, desc: '休日のお出かけが快適に（幸福+5・魅力+2）' },
-  { id: 'suv', name: '🚙 ファミリーSUV', price: 450, fx: { happy: 8, looks: 4 }, desc: 'アウトドアや家族旅行に最適（幸福+8・魅力+4）' },
-  { id: 'supercar', name: '🏎️ 高級スポーツカー', price: 1500, fx: { happy: 14, looks: 10 }, desc: '誰もが羨むスーパーカー（幸福+14・魅力+10）' },
+  { id: 'compact', name: '🚗 コンパクトカー', price: 200, fx: { happy: 5, social: 2 }, desc: '休日のお出かけが快適に（幸福+5・社交+2）' },
+  { id: 'suv', name: '🚙 ファミリーSUV', price: 450, fx: { happy: 8, fitness: 4 }, desc: 'アウトドアや家族旅行に最適（幸福+8・体力+4）' },
+  { id: 'supercar', name: '🏎️ 高級スポーツカー', price: 1500, fx: { happy: 14, social: 8, creativity: 5 }, desc: '誰もが羨むスーパーカー（幸福+14・社交+8・創造+5）' },
 ];
 const LUXURY_ITEMS = [
-  { id: 'watch', name: '⌚ 高級機械式時計', price: 150, fx: { looks: 6, happy: 5 }, desc: '一生モノの名品（魅力+6・幸福+5）' },
-  { id: 'dog', name: '🐶 愛犬を迎える', price: 40, fx: { happy: 10, health: 4 }, flag: 'pet', desc: '毎日の散歩で癒やしと健康（幸福+10・健康+4）' },
-  { id: 'villa', name: '🏖️ リゾート別荘', price: 5000, fx: { happy: 18, looks: 8 }, desc: '週末を海辺で過ごす贅沢（幸福+18・魅力+8・毎年幸福+2）' },
+  { id: 'watch', name: '⌚ 高級機械式時計', price: 150, fx: { social: 6, happy: 5 }, desc: '一生モノの名品（社交+6・幸福+5）' },
+  { id: 'dog', name: '🐶 愛犬を迎える', price: 40, fx: { happy: 10, fitness: 5 }, flag: 'pet', desc: '毎日の散歩で癒やしと体力（幸福+10・体力+5）' },
+  { id: 'villa', name: '🏖️ リゾート別荘', price: 5000, fx: { happy: 18, creativity: 8, social: 6 }, desc: '週末を海辺で過ごす贅沢（幸福+18・創造+8・社交+6・毎年幸福+2）' },
 ];
 
 // ---------- サウンド（Web Audio API）＆ 倍速設定 ----------
@@ -376,9 +408,17 @@ function ensureState(s) {
   if (typeof s.gen !== 'number') s.gen = 1;
   if (!s.gender) s.gender = 'other';
   if (!s.orientation) s.orientation = 'hetero';
+  if (!s.mbti) s.mbti = randomMBTI();
   if (!Array.isArray(s.traits) || !s.traits.length) {
     s.traits = shuffle(TRAITS).slice(0, 2).map(t => t.id);
   }
+  // 旧ステータス(health, looks)からの移行
+  if (typeof s.fitness !== 'number') s.fitness = typeof s.health === 'number' ? s.health : 60;
+  if (typeof s.social !== 'number') s.social = typeof s.looks === 'number' ? s.looks : 50;
+  if (typeof s.creativity !== 'number') s.creativity = typeof s.smarts === 'number' ? Math.round(s.smarts * 0.85) : 50;
+  if (typeof s.smarts !== 'number') s.smarts = 50;
+  if (typeof s.happy !== 'number') s.happy = 65;
+
   if (typeof s.partnerLove !== 'number') s.partnerLove = s.partner ? 70 : 0;
   if (s.partner && !s.partnerInfo) {
     s.partnerInfo = { trait: pick(PARTNER_TRAITS), job: pick(PARTNER_JOBS) };
@@ -396,7 +436,6 @@ function ensureState(s) {
   if (typeof s.assets.estate !== 'number') s.assets.estate = 0;
   if (s.sideJob === undefined) s.sideJob = null;
   else if (s.sideJob && typeof s.sideJob.level === 'number' && !s.sideJob.id) {
-    // レガシーデータのマイグレーション
     s.sideJob = { id: 'writer', name: '✍️ Webライティング・事務代行' };
   }
   if (s.jh === undefined) s.jh = null;
@@ -410,7 +449,7 @@ function ensureState(s) {
   if (typeof s.lastWorldYear !== 'number') s.lastWorldYear = -99;
   if (typeof s.lastColdYear !== 'number') s.lastColdYear = -99;
   if (!s.worldHistory) s.worldHistory = {};
-  if (!Array.isArray(s.history)) s.history = [{ age: s.age || 0, happy: s.happy || 60, health: s.health || 60, wealth: s.money || 0 }];
+  if (!Array.isArray(s.history)) s.history = [{ age: s.age || 0, happy: s.happy || 60, fitness: s.fitness || 60, wealth: s.money || 0 }];
   return s;
 }
 
@@ -439,13 +478,15 @@ function newLife(name, gender = 'random', orientation = 'hetero') {
   let traits = shuffle(TRAITS).slice(0, chance(0.45) ? 2 : 1).map(t => t.id);
   let house = null;
   let bonusStat = 0;
+  const mbti = randomMBTI();
 
   S = ensureState({
     name, gender: finalGender, orientation: finalOrientation,
-    age: 0, gen, traits, family: fam,
-    health: clamp(r(50, 78) + (traits.includes('iron') ? 10 : 0)),
-    smarts: clamp(r(22, 48) + (fam === 'rich' ? 8 : 0) + (traits.includes('genius') ? 12 : 0) + bonusStat),
-    looks: clamp(r(25, 62) + (traits.includes('charisma') ? 12 : 0) + bonusStat),
+    age: 0, gen, mbti, traits, family: fam,
+    smarts: clamp(r(25, 48) + (fam === 'rich' ? 6 : 0) + (traits.includes('genius') ? 12 : 0) + bonusStat),
+    fitness: clamp(r(50, 75) + (traits.includes('iron') ? 12 : 0)),
+    social: clamp(r(25, 55) + (traits.includes('charisma') ? 12 : 0) + bonusStat),
+    creativity: clamp(r(25, 55) + (traits.includes('artist') ? 14 : 0)),
     happy: clamp(r(55, 75) + (traits.includes('optimist') ? 10 : 0)),
     money: initMoney,
     edu: 0, student: false, jh: null, hs: null, track: null, uni: null, uniRank: 0, gradSchool: null, ronin: 0, gradYears: 0,
@@ -458,7 +499,7 @@ function newLife(name, gender = 'random', orientation = 'hetero') {
     flags: house ? { house: true } : {}, once: {}, happySum: 0, years: 0, log: [],
     history: [], tmp: null, cause: null,
   });
-  S.history = [{ age: 0, happy: S.happy, health: S.health, wealth: totalWealth() }];
+  S.history = [{ age: 0, happy: S.happy, fitness: S.fitness, wealth: totalWealth() }];
   recordMetaTraitAndJob();
 }
 
@@ -508,22 +549,40 @@ function addKid() {
 }
 
 function fx(obj) {
-  for (const k in obj) {
-    let v = obj[k];
+  const mbti = S && S.mbti ? mbtiObj(S.mbti) : null;
+  const bias = mbti ? mbti.bias : {};
+
+  for (const rawK in obj) {
+    let k = rawK;
+    // 古いステータスキーの互換性マッピング
+    if (k === 'health') k = 'fitness';
+    if (k === 'looks') k = 'social';
+
+    let v = obj[rawK];
     if (k === 'money') {
       S.money += v;
     } else {
+      // 才能補正
       if (k === 'smarts' && v > 0 && hasTrait('genius')) v = Math.ceil(v * 1.35);
-      if (k === 'health' && v > 0 && hasTrait('iron')) v = Math.ceil(v * 1.35);
-      if (k === 'health' && v < 0 && hasTrait('iron')) v = Math.ceil(v * 0.65);
-      if (k === 'looks' && v > 0 && hasTrait('charisma')) v = Math.ceil(v * 1.35);
+      if (k === 'fitness' && v > 0 && hasTrait('iron')) v = Math.ceil(v * 1.35);
+      if (k === 'fitness' && v < 0 && hasTrait('iron')) v = Math.ceil(v * 0.65);
+      if (k === 'social' && v > 0 && hasTrait('charisma')) v = Math.ceil(v * 1.35);
+      if (k === 'creativity' && v > 0 && hasTrait('artist')) v = Math.ceil(v * 1.35);
       if (k === 'happy' && v > 0 && hasTrait('optimist')) v = Math.ceil(v * 1.3);
       if (k === 'happy' && v < 0 && hasTrait('optimist')) v = Math.ceil(v * 0.7);
-      S[k] = clamp(S[k] + v);
+
+      // 性格（MBTI）補正
+      if (v > 0 && bias[k]) {
+        v = Math.round(v * bias[k]);
+      }
+
+      if (S[k] !== undefined) {
+        S[k] = clamp(S[k] + v);
+      }
     }
   }
 }
-const snap = () => ({ health: S.health, smarts: S.smarts, looks: S.looks, happy: S.happy, money: S.money });
+const snap = () => ({ smarts: S.smarts, fitness: S.fitness, social: S.social, creativity: S.creativity, happy: S.happy, money: S.money });
 const diff = b => Object.keys(b).map(k => ({ k, v: S[k] - b[k] })).filter(x => x.v !== 0);
 const chipsHTML = d => d.map(x =>
   `<span class="chip ${x.v > 0 ? 'up' : 'down'}">${LABEL[x.k]} ${x.v > 0 ? '+' : ''}${x.v}${x.k === 'money' ? '万' : ''}</span>`).join('');
@@ -574,25 +633,27 @@ function stageLabel() {
 // ---------- 行動 ----------
 const ACTIONS = {
   baby: [
-    { icon: '🍼', label: 'すくすく育つ', desc: '寝て、泣いて、笑って。', fn() { fx({ health: r(1, 3), smarts: r(0, 2), happy: r(0, 2) }); return pick(['はじめて寝返りをうった！', '家族に囲まれ、すくすく育った。', 'はじめて言葉を話した！', 'よちよち歩きを始めた。', 'たくさん笑って、たくさん眠った。']); } },
+    { icon: '🍼', label: 'すくすく育つ', desc: '寝て、泣いて、笑って。', fn() { fx({ fitness: r(1, 3), smarts: r(0, 2), happy: r(0, 2) }); return pick(['はじめて寝返りをうった！', '家族に囲まれ、すくすく育った。', 'はじめて言葉を話した！', 'よちよち歩きを始めた。', 'たくさん笑って、たくさん眠った。']); } },
   ],
   kid: [
-    { icon: '⚽', label: '外で遊ぶ', desc: '健康↑ 幸福↑', fn() { fx({ health: r(2, 4), happy: r(1, 3) }); return '公園を走り回って遊んだ。'; } },
-    { icon: '📚', label: '絵本を読む', desc: '知力↑', fn() { fx({ smarts: r(2, 4) }); return '絵本に夢中になった。'; } },
-    { icon: '🏠', label: '家族と過ごす', desc: '幸福↑↑', fn() { fx({ happy: r(3, 5) }); return '家族と穏やかな時間を過ごした。'; } },
+    { icon: '⚽', label: '外で元気に遊ぶ', desc: '体力↑ 幸福↑', fn() { fx({ fitness: r(2, 4), happy: r(1, 3) }); return '公園を走り回って遊んだ。'; } },
+    { icon: '📚', label: '絵本を読む', desc: '知力↑ 創造↑', fn() { fx({ smarts: r(2, 4), creativity: r(1, 3) }); return '絵本の世界に夢中になった。'; } },
+    { icon: '🖍️', label: 'お絵かき・ブロック', desc: '創造↑↑', fn() { fx({ creativity: r(3, 5), happy: r(1, 2) }); return '夢中で絵や工作をつくった。'; } },
+    { icon: '🏠', label: '家族と過ごす', desc: '幸福↑↑ 社交↑', fn() { fx({ happy: r(3, 5), social: r(1, 2) }); return '家族と穏やかな時間を過ごした。'; } },
   ],
   elem: [
     { icon: '✏️', label: '勉強する', desc: '知力↑↑ 幸福↓', fn() { fx({ smarts: r(3, 5), happy: -r(0, 2) }); return 'コツコツ勉強に励んだ。'; } },
-    { icon: '🏃', label: '運動する', desc: '健康↑↑ 魅力↑', fn() { fx({ health: r(3, 5), looks: r(0, 2) }); return 'スポーツで汗を流した。'; } },
-    { icon: '🤝', label: '友達と遊ぶ', desc: '幸福↑↑ 魅力↑', fn() { fx({ happy: r(3, 5), looks: r(1, 2) }); return '友達と毎日のように遊んだ。'; } },
-    { icon: '🎮', label: 'ゲームをする', desc: '幸福↑ 健康↓', fn() { fx({ happy: r(2, 4), smarts: r(-1, 1), health: -1 }); return 'ゲームに熱中した。'; } },
+    { icon: '🏃', label: '運動する', desc: '体力↑↑ 社交↑', fn() { fx({ fitness: r(3, 5), social: r(0, 2) }); return 'スポーツで汗を流した。'; } },
+    { icon: '🤝', label: '友達と遊ぶ', desc: '社交↑↑ 幸福↑', fn() { fx({ social: r(3, 5), happy: r(2, 4) }); return '友達と毎日のように遊んだ。'; } },
+    { icon: '🎨', label: '工作・読書・創作', desc: '創造↑↑ 知力↑', fn() { fx({ creativity: r(3, 5), smarts: r(1, 2) }); return '自由な発想で創作を楽しんだ。'; } },
+    { icon: '🎮', label: 'ゲームをする', desc: '幸福↑ 体力↓', fn() { fx({ happy: r(2, 4), smarts: r(-1, 1), fitness: -1 }); return 'ゲームに熱中した。'; } },
   ],
   teen: [
     { icon: '📖', label: '勉強に打ち込む', desc: '知力↑↑↑ 幸福↓', fn() { fx({ smarts: r(4, 6), happy: -r(1, 3) }); return '机にかじりついて勉強した。'; } },
-    { icon: '🏀', label: '部活に燃える', desc: '健康↑↑ 魅力↑', fn() { fx({ health: r(3, 5), looks: r(1, 3), happy: r(1, 2) }); return '部活に青春を捧げた。'; } },
-    { icon: '👗', label: 'おしゃれを磨く', desc: '魅力↑↑', fn() { fx({ looks: r(3, 5), money: -r(0, 5) }); return '見た目に磨きをかけた。'; } },
-    { icon: '🌸', label: '青春を謳歌する', desc: '幸福↑↑↑ 知力↓', fn() { fx({ happy: r(4, 6), smarts: -r(0, 2) }); return '友達と最高の思い出を作った。'; } },
-    { icon: '🍔', label: 'アルバイト', desc: 'お金↑ 幸福↓', cond: () => S.age >= 16, fn() { fx({ money: r(30, 60), happy: -1 }); return 'アルバイトでお小遣いを稼いだ。'; } },
+    { icon: '🏀', label: '部活に燃える', desc: '体力↑↑ 社交↑', fn() { fx({ fitness: r(3, 5), social: r(1, 3), happy: r(1, 2) }); return '部活に青春を捧げた。'; } },
+    { icon: '🎨', label: '創作・趣味を極める', desc: '創造↑↑↑', fn() { fx({ creativity: r(4, 6), happy: r(1, 2) }); return '自分の世界を広げる創作に没頭した。'; } },
+    { icon: '🤝', label: '仲間と青春を謳歌', desc: '社交↑↑ 幸福↑↑', fn() { fx({ social: r(3, 5), happy: r(4, 6), smarts: -r(0, 2) }); return '友達と最高の思い出を作った。'; } },
+    { icon: '🍔', label: 'アルバイト', desc: 'お金↑ 体力↓', cond: () => S.age >= 16, fn() { fx({ money: r(30, 60), fitness: -1, social: 1 }); return 'アルバイトでお小遣いを稼いだ。'; } },
   ],
   college: [
     {
@@ -602,40 +663,42 @@ const ACTIONS = {
         return S.gradSchool ? '大学院で先端研究と論文執筆に没頭した！' : '講義とゼミの研究に打ち込んだ。';
       }
     },
-    { icon: '🎸', label: 'サークル活動', desc: '幸福↑↑ 魅力↑', cond: () => !S.gradSchool, fn() { fx({ happy: r(4, 6), looks: r(1, 3) }); return 'サークルで仲間と盛り上がった。'; } },
-    { icon: '☕', label: 'アルバイト', desc: 'お金↑↑ 健康↓', fn() { fx({ money: r(80, 130), health: -1 }); return 'バイトでお金を稼いだ。'; } },
-    { icon: '💄', label: '自分磨き', desc: '魅力↑↑ お金↓', fn() { fx({ looks: r(3, 5), money: -20 }); return 'ジムや美容に投資した。'; } },
+    { icon: '🎸', label: 'サークル・創作活動', desc: '創造↑↑ 社交↑', cond: () => !S.gradSchool, fn() { fx({ creativity: r(3, 5), social: r(2, 4), happy: r(3, 5) }); return 'サークル仲間と作品や企画に熱中した。'; } },
+    { icon: '🥂', label: '合コン・人脈づくり', desc: '社交↑↑↑ お金↓', fn() { fx({ social: r(4, 6), money: -15, happy: r(2, 4) }); return '新しい出会いや人脈を広げた。'; } },
+    { icon: '☕', label: 'アルバイト', desc: 'お金↑↑ 体力↓', fn() { fx({ money: r(80, 130), fitness: -1 }); return 'バイトでお金を稼いだ。'; } },
+    { icon: '🏋️', label: '筋トレ・体力作り', desc: '体力↑↑ 幸福↑', fn() { fx({ fitness: r(3, 5), happy: r(1, 2), money: -10 }); return 'ジムに通って体力を鍛え上げた。'; } },
   ],
   worker: [
     {
       icon: '🔥', label: '仕事に励む', desc: '昇進・昇給のチャンス', fn() {
-        fx({ health: -r(1, 3), happy: -r(0, 2) });
+        fx({ fitness: -r(1, 3), happy: -r(0, 2) });
         const j = S.job;
         if (j.name === '起業家') {
-          if (chance(0.22 + (hasTrait('merchant') ? 0.1 : 0))) { j.base = Math.round(j.base * 1.3); fx({ happy: 5 }); playSE('fanfare'); return '事業が急成長した！'; }
+          if (chance(0.22 + (hasTrait('merchant') ? 0.1 : 0) + S.social / 400)) { j.base = Math.round(j.base * 1.3); fx({ happy: 5 }); playSE('fanfare'); return '事業が急成長した！'; }
           if (chance(0.1)) { j.base = Math.round(j.base * 0.75); fx({ happy: -4 }); return '業績が悪化してしまった…'; }
           return '会社経営に全力を注いだ。';
         }
         if (j.name === '動画配信者') {
-          if (chance(0.25 + (hasTrait('charisma') ? 0.15 : 0))) { j.base = Math.round(j.base * 1.28); fx({ happy: 6, looks: 2 }); playSE('fanfare'); return '動画が大バズりして登録者急増！収入が大幅アップした！'; }
+          if (chance(0.22 + S.creativity / 300 + (hasTrait('charisma') ? 0.15 : 0))) { j.base = Math.round(j.base * 1.28); fx({ happy: 6, creativity: 2 }); playSE('fanfare'); return '動画が大バズりして登録者急増！収入が大幅アップした！'; }
           return '毎日企画を考えて動画投稿を続けた。';
         }
         if (j.name === '小説家・漫画家') {
-          if (chance(0.25 + (hasTrait('artist') ? 0.15 : 0))) { j.base = Math.round(j.base * 1.3); fx({ happy: 7, smarts: 2 }); playSE('fanfare'); return '新作が大ヒットして重版出来！印税が跳ね上がった！'; }
+          if (chance(0.25 + S.creativity / 300 + (hasTrait('artist') ? 0.15 : 0))) { j.base = Math.round(j.base * 1.3); fx({ happy: 7, creativity: 2 }); playSE('fanfare'); return '新作が大ヒットして重版出来！印税が跳ね上がった！'; }
           return '原稿と向き合い、創作に打ち込んだ。';
         }
-        if (j.corp && j.level < 4 && chance(0.12 + S.smarts / 400 + (hasTrait('lucky') ? 0.06 : 0))) {
+        if (j.corp && j.level < 4 && chance(0.1 + (S.smarts + S.social) / 800 + (hasTrait('lucky') ? 0.06 : 0))) {
           j.level++; fx({ happy: 6 }); if (j.level >= 3) S.flags.executive = true;
           playSE('fanfare');
           return `昇進して${LEVELS[j.level]}になった！`;
         }
-        if (!j.corp && chance(0.3 + (hasTrait('artist') ? 0.1 : 0))) { j.base = Math.round(j.base * 1.09); fx({ happy: 3 }); return '腕が認められ、収入がアップした！'; }
+        if (!j.corp && chance(0.28 + S.creativity / 350)) { j.base = Math.round(j.base * 1.09); fx({ happy: 3 }); return '腕が認められ、収入がアップした！'; }
         return '仕事に全力を注いだ。';
       }
     },
-    { icon: '🌇', label: '定時で帰る', desc: '幸福↑↑ 健康↑', fn() { fx({ happy: r(3, 5), health: r(0, 2) }); return 'プライベートを大切にした。'; } },
-    { icon: '📘', label: '自己投資', desc: '知力↑↑ お金↓', fn() { fx({ smarts: r(2, 4), looks: r(0, 2), money: -30 }); return '資格の勉強やセミナーに通った。'; } },
-    { icon: '🥗', label: '健康管理', desc: '健康↑↑', fn() { fx({ health: r(3, 5), money: -10 }); return 'ジム通いと自炊を習慣にした。'; } },
+    { icon: '🌇', label: '定時で帰る', desc: '幸福↑↑ 体力↑', fn() { fx({ happy: r(3, 5), fitness: r(0, 2) }); return 'プライベートを大切にした。'; } },
+    { icon: '📘', label: '自己投資・資格', desc: '知力↑↑ お金↓', fn() { fx({ smarts: r(2, 4), money: -30 }); return '資格の勉強やセミナーに通った。'; } },
+    { icon: '🤝', label: '人脈開拓・会食', desc: '社交↑↑ お金↓', fn() { fx({ social: r(3, 5), money: -25, happy: 1 }); return '社外の勉強会や交流会に参加した。'; } },
+    { icon: '🥗', label: '健康管理・ジム', desc: '体力↑↑', fn() { fx({ fitness: r(3, 5), money: -10 }); return 'ジム通いと自炊を習慣にした。'; } },
     { icon: '🥂', label: '贅沢をする', desc: '幸福↑↑↑ お金↓↓', fn() { fx({ happy: r(5, 8), money: -r(80, 150) }); return '高級レストランや買い物を満喫した。'; } },
     { icon: '🔄', label: '転職活動', desc: '新しい職場を探す', fn() { return { text: '転職活動を始めた。', then: jobHuntEvent() }; } },
   ],
@@ -643,19 +706,19 @@ const ACTIONS = {
     {
       icon: '🏟️', label: '試合で結果を出す', desc: '年俸更改・成績向上のチャンス',
       fn() {
-        fx({ health: -r(2, 4) });
+        fx({ fitness: -r(2, 4) });
         const j = S.job;
-        const perfRoll = S.health + (hasTrait('iron') ? 15 : 0) + (hasTrait('lucky') ? 10 : 0) + r(0, 30);
+        const perfRoll = S.fitness + (hasTrait('iron') ? 15 : 0) + (hasTrait('lucky') ? 10 : 0) + r(0, 30);
         const injuryChance = hasTrait('iron') ? 0.04 : 0.09;
 
         if (chance(injuryChance)) {
-          fx({ health: -r(5, 8), happy: -5 });
+          fx({ fitness: -r(5, 8), happy: -5 });
           playSE('bad');
           return 'シーズン中に激しい接触で負傷…長期離脱となり苦しいリハビリを余儀なくされた。';
         }
         if (perfRoll >= 95) {
           j.base = Math.round(j.base * (1.3 + (hasTrait('lucky') ? 0.1 : 0)));
-          fx({ happy: 8, looks: 3 });
+          fx({ happy: 8, social: 3 });
           playSE('fanfare');
           return `シーズンMVP・主要タイトルを獲得！大歓声を浴び、年俸が ${fmtMoney(salary())} に大幅アップ！`;
         }
@@ -670,24 +733,24 @@ const ACTIONS = {
       }
     },
     {
-      icon: '🏋️', label: '肉体改造・猛特訓', desc: '健康↑↑ 魅力↑ 幸福↓',
+      icon: '🏋️', label: '肉体改造・猛特訓', desc: '体力↑↑ 幸福↓',
       fn() {
-        fx({ health: r(4, 7), looks: r(1, 2), happy: -r(1, 3) });
+        fx({ fitness: r(4, 7), happy: -r(1, 3) });
         return '極限まで肉体を追い込み、強靭なフィジカルと研ぎ澄まされた技術を手に入れた！';
       }
     },
     {
-      icon: '🧘', label: '徹底的なボディケア', desc: '健康↑↑ 幸福↑ お金↓',
+      icon: '🧘', label: '徹底的なボディケア', desc: '体力↑↑ 幸福↑ お金↓',
       fn() {
-        fx({ health: r(3, 5), happy: r(3, 5), money: -20 });
+        fx({ fitness: r(3, 5), happy: r(3, 5), money: -20 });
         return '専属トレーナーによるマッサージや食事管理で、万全のコンディションを整えた。';
       }
     },
     {
-      icon: '📺', label: 'メディア・ファン交流', desc: '魅力↑↑ 幸福↑ お金↑',
+      icon: '📺', label: 'メディア・ファン交流', desc: '社交↑↑ 幸福↑ お金↑',
       fn() {
         const bonus = r(40, 90);
-        fx({ looks: r(3, 5), happy: r(2, 4), money: bonus });
+        fx({ social: r(3, 5), happy: r(2, 4), money: bonus });
         return `スポーツ番組やファン感謝イベントに出演！スポンサー料や出演料（+${fmtMoney(bonus)}）を得た！`;
       }
     },
@@ -717,21 +780,21 @@ const ACTIONS = {
     {
       icon: '📖', label: '受験勉強に専念する', desc: '知力↑↑↑ 幸福↓',
       cond: () => !!S.ronin,
-      fn() { fx({ smarts: r(6, 10), happy: -2, health: -1 }); return '予備校と自習室に籠もり、必死で受験勉強に打ち込んだ！'; }
+      fn() { fx({ smarts: r(6, 10), happy: -2, fitness: -1 }); return '予備校と自習室に籠もり、必死で受験勉強に打ち込んだ！'; }
     },
     { icon: '📝', label: '就職活動', desc: '仕事を探す', cond: () => !S.ronin, fn() { return { text: '就職活動に励んだ。', then: jobHuntEvent() }; } },
-    { icon: '🚧', label: '日雇いバイト', desc: 'お金↑ 健康↓', fn() { fx({ money: r(60, 120), health: -2 }); return S.ronin ? '予備校代を稼ぐためバイトをした。' : '日雇いの仕事で食いつないだ。'; } },
+    { icon: '🚧', label: '日雇いバイト', desc: 'お金↑ 体力↓', fn() { fx({ money: r(60, 120), fitness: -2 }); return S.ronin ? '予備校代を稼ぐためバイトをした。' : '日雇いの仕事で食いつないだ。'; } },
     { icon: '🛋️', label: 'のんびり過ごす', desc: '幸福↑ 知力↓', fn() { fx({ happy: r(2, 4), smarts: -1 }); return '何もせずのんびり過ごした。'; } },
     { icon: '📚', label: '資格の勉強', desc: '知力↑↑', cond: () => !S.ronin, fn() { fx({ smarts: r(3, 5), money: -10 }); return '再起を目指して勉強した。'; } },
   ],
   senior: [
-    { icon: '🎨', label: '趣味を楽しむ', desc: '幸福↑↑ 知力↑', fn() { fx({ happy: r(3, 6) + (hasTrait('artist') ? 2 : 0), smarts: r(0, 2) }); return '趣味に没頭する充実した日々。'; } },
-    { icon: '🚶', label: '散歩をする', desc: '健康↑', fn() { fx({ health: r(1, 4) }); return '毎朝の散歩を日課にした。'; } },
+    { icon: '🎨', label: '趣味・創作を楽しむ', desc: '幸福↑↑ 創造↑', fn() { fx({ happy: r(3, 6) + (hasTrait('artist') ? 2 : 0), creativity: r(1, 3) }); return '趣味に没頭する充実した日々。'; } },
+    { icon: '🚶', label: '散歩をする', desc: '体力↑', fn() { fx({ fitness: r(1, 4) }); return '毎朝の散歩を日課にした。'; } },
     {
-      icon: '👨‍👩‍👧', label: '家族と過ごす', desc: '幸福↑↑', fn() {
+      icon: '👨‍👩‍👧', label: '家族や仲間と過ごす', desc: '幸福↑↑ 社交↑', fn() {
         const fam = (S.married ? 1 : 0) + S.kids.length;
-        fx({ happy: r(2, 4) + Math.min(fam, 3) });
-        return fam ? '家族に囲まれて穏やかに過ごした。' : '古い友人たちと語らった。';
+        fx({ happy: r(2, 4) + Math.min(fam, 3), social: r(1, 3) });
+        return fam ? '家族や古い友人たちに囲まれて穏やかに過ごした。' : '地域のサークルで語らった。';
       }
     },
     { icon: '🧳', label: '旅行に出かける', desc: '幸福↑↑↑ お金↓', fn() { fx({ money: -r(50, 120), happy: r(6, 10) }); return '憧れの地へ旅に出た。'; } },
@@ -746,15 +809,20 @@ function jobHuntEvent() {
   const uniBonus = (S.uniRank === 3 ? 18 : S.uniRank === 2 ? 12 : S.uniRank === 1 ? 6 : 0)
     + (S.edu >= 4 ? 14 : 0)
     + (hasTrait('genius') ? 8 : 0);
-  const lBonus = hasTrait('charisma') ? 10 : 0;
+  const socBonus = hasTrait('charisma') ? 10 : 0;
+  const fitBonus = hasTrait('iron') ? 8 : 0;
+  const creBonus = hasTrait('artist') ? 10 : 0;
 
   const isEligible = j => {
     // 1. 学歴要件（高卒・大卒等）
     if (S.edu < j.edu) return false;
 
-    // 2. 知力・魅力の基本要件
-    if (S.smarts + uniBonus + r(0, 8) < j.s) return false;
-    if (S.looks + lBonus + r(0, 8) < j.l) return false;
+    // 2. ステータス要件（新マルチステータス判定）
+    const req = j.req || {};
+    if (req.smarts && S.smarts + uniBonus + r(0, 8) < req.smarts) return false;
+    if (req.social && S.social + socBonus + r(0, 8) < req.social) return false;
+    if (req.fitness && S.fitness + fitBonus + r(0, 8) < req.fitness) return false;
+    if (req.creativity && S.creativity + creBonus + r(0, 8) < req.creativity) return false;
 
     // 3. 転職（中途採用）時の現実的フィルタリング
     if (isMidCareer) {
@@ -807,9 +875,10 @@ function jobHuntEvent() {
       diffText = `（現在比 ${diffVal >= 0 ? '+' : ''}${fmtMoney(diffVal)}）`;
     }
     const isSameJob = S.job && S.job.name === j.name;
+    const descText = j.desc ? ` ｜ ${j.desc}` : '';
     const labelText = isSameJob
       ? `${j.icon} ${j.name}（同業他社への転職 / 年収 ${j.base}万円）`
-      : `${j.icon} ${j.name}（年収 ${j.base}万円）${diffText}`;
+      : `${j.icon} ${j.name}（年収 ${j.base}万円）${diffText}${descText}`;
 
     return {
       label: labelText,
@@ -1111,7 +1180,7 @@ function milestone(a) {
         label: '🏅 プロ入りテストを受ける',
         fn() {
           S.student = false; S.edu = 2;
-          if (chance(S.health / 105 + (hasTrait('iron') ? 0.15 : 0))) {
+          if (chance(S.fitness / 105 + (hasTrait('iron') ? 0.15 : 0))) {
             setJob({ name: 'プロスポーツ選手', base: 900, icon: '🏅' });
             S.flags.pro = true;
             fx({ happy: 12, looks: 4 });
@@ -1268,7 +1337,7 @@ function openLoveMenu() {
       disabled: acted,
       fn() {
         S.actedLoveYear = S.age;
-        if (chance(0.35 + S.looks / 180 + loveBonus)) {
+        if (chance(0.35 + S.social / 180 + loveBonus)) {
           const p = randomPartner();
           setPartner(p, 65);
           fx({ happy: 8 });
@@ -1290,7 +1359,7 @@ function openLoveMenu() {
         fn() {
           S.actedLoveYear = S.age;
           fx({ money: -5 });
-          if (chance(0.6 + S.looks / 200 + loveBonus)) {
+          if (chance(0.6 + S.social / 200 + loveBonus)) {
             const p = randomPartner();
             setPartner(p, 65);
             fx({ happy: 8 });
@@ -1309,7 +1378,7 @@ function openLoveMenu() {
         fn() {
           S.actedLoveYear = S.age;
           fx({ money: -15 });
-          if (chance(0.82 + S.looks / 300 + loveBonus)) {
+          if (chance(0.82 + S.social / 300 + loveBonus)) {
             const p = randomPartner();
             setPartner(p, 78);
             fx({ happy: 10 });
@@ -1495,7 +1564,8 @@ function currentCarObj() {
   return CARS.find(c => c.id === S.assets.car) || null;
 }
 function estateRentIncome() {
-  const rate = hasTrait('merchant') ? 0.08 : 0.07;
+  // 実質利回り 3.5% (商才で4.2%)
+  const rate = hasTrait('merchant') ? 0.042 : 0.035;
   return Math.round(S.assets.estate * rate);
 }
 
@@ -1551,7 +1621,7 @@ function openStockMenu() {
   choices.push({ label: '← 資産メニューに戻る', cancel: true, silent: true, fn: () => ({ then: openAssetMenu() }) });
   return {
     icon: '📈', title: '株式・インデックス投資',
-    text: `現在の運用残高：${fmtMoney(S.assets.stock)}（貯金：${fmtMoney(S.money)}）\n毎年末に相場と知力・強運に応じて自動で運用益（目安 -6%〜+14%）が発生し、複利で増えていきます。`,
+    text: `現在の運用残高：${fmtMoney(S.assets.stock)}（貯金：${fmtMoney(S.money)}）\n世界経済の波に応じて年末に価格が変動します（目安 -15%〜+18%）。数年に一度の市場暴落や好況の波があり、知力や性格によってリスクを抑えられます。`,
     choices,
   };
 }
@@ -1560,21 +1630,21 @@ function openEstateMenu() {
   const rent = estateRentIncome();
   const choices = [
     {
-      label: '🏢 区分マンション投資（500万円｜家賃 +35万/年）',
+      label: '🏢 区分マンション投資（500万円｜家賃 +18万/年）',
       disabled: S.money < 500,
-      fn() { fx({ money: -500 }); S.assets.estate += 500; playSE('good'); return { text: '収益用ワンルームを購入！毎年安定した家賃収入が入るようになった！', then: openAssetMenu() }; }
+      fn() { fx({ money: -500 }); S.assets.estate += 500; playSE('good'); return { text: '収益用ワンルームを購入！安定した家賃収入（年利約3.5%）が入るようになった！', then: openAssetMenu() }; }
     },
     {
-      label: '🏘️ 一棟アパート購入（3,000万円｜家賃 +210万/年）',
+      label: '🏘️ 一棟アパート購入（3,000万円｜家賃 +105万/年）',
       disabled: S.money < 3000,
       confirm: '3,000万円で一棟アパートを購入しますか？',
-      fn() { fx({ money: -3000 }); S.assets.estate += 3000; playSE('fanfare'); return { text: '一棟アパートのオーナーになった！毎年の家賃収入が大幅アップ！', then: openAssetMenu() }; }
+      fn() { fx({ money: -3000 }); S.assets.estate += 3000; playSE('fanfare'); return { text: '一棟アパートのオーナーになった！毎年の家賃収入がアップ！（※築年数による修繕リスクあり）', then: openAssetMenu() }; }
     },
     {
-      label: '🏙️ 都心商業ビル購入（1億円｜家賃 +700万/年）',
+      label: '🏙️ 都心商業ビル購入（1億円｜家賃 +350万/年）',
       disabled: S.money < 10000,
       confirm: '1億円で都心商業ビルを購入しますか？',
-      fn() { fx({ money: -10000 }); S.assets.estate += 10000; playSE('fanfare'); return { text: '都心のビルを一棟買いした！莫大な不労所得を手に入れた！', then: openAssetMenu() }; }
+      fn() { fx({ money: -10000 }); S.assets.estate += 10000; playSE('fanfare'); return { text: '都心のビルを一棟買いした！強固な家賃収入基盤を手に入れた！', then: openAssetMenu() }; }
     },
   ];
   if (S.assets.estate > 0) {
@@ -1593,7 +1663,7 @@ function openEstateMenu() {
   choices.push({ label: '← 資産メニューに戻る', cancel: true, silent: true, fn: () => ({ then: openAssetMenu() }) });
   return {
     icon: '🏢', title: '収益不動産オーナー',
-    text: `保有不動産：${fmtMoney(S.assets.estate)}（年間家賃収入：+${fmtMoney(rent)}）\n不動産は価格変動がなく、毎年安定した家賃収入を生み出します。`,
+    text: `保有不動産：${fmtMoney(S.assets.estate)}（年間家賃収入：+${fmtMoney(rent)}）\n不動産は安定したインカムゲインを生み出します（目安 実質年利約3.5%）。時折、設備の修繕やリフォーム費用が発生します。`,
     choices,
   };
 }
@@ -1771,7 +1841,7 @@ function openCareerMenu() {
   }
 
   if (S.age >= 25 && (!S.job || S.job.name !== '政治家')) {
-    const electRate = clamp(Math.round(15 + S.looks * 0.4 + S.smarts * 0.3 + (hasTrait('charisma') ? 18 : 0) + (hasTrait('lucky') ? 10 : 0)), 10, 92);
+    const electRate = clamp(Math.round(15 + S.social * 0.4 + S.smarts * 0.3 + (hasTrait('charisma') ? 18 : 0) + (hasTrait('lucky') ? 10 : 0)), 10, 92);
     choices.push({
       label: `🗳️ 選挙に出馬して政治家を目指す（供託金 300万円｜当選率 ${electRate}%）`,
       disabled: acted || S.money < 300,
@@ -1898,7 +1968,7 @@ const EVENTS = [
   {
     id: 'cold', icon: '🤒', title: 'ひどい風邪', min: 3, max: 110,
     p: 0.25,
-    cond: () => (!S.lastColdYear || S.age - S.lastColdYear >= 4) && (!hasTrait('iron') || chance(0.4)) && (S.health < 80 || chance(0.35)),
+    cond: () => (!S.lastColdYear || S.age - S.lastColdYear >= 4) && (!hasTrait('iron') || chance(0.4)) && (S.fitness < 80 || chance(0.35)),
     text: '高熱が出て寝込んでしまった。',
     choices: [
       {
@@ -1913,7 +1983,7 @@ const EVENTS = [
         label: '気合いで治す',
         fn() {
           S.lastColdYear = S.age;
-          if (chance(S.health / 120 + (hasTrait('iron') ? 0.2 : 0))) {
+          if (chance(S.fitness / 120 + (hasTrait('iron') ? 0.2 : 0))) {
             fx({ health: 1 });
             return '持ち前の体力で乗り切った！';
           }
@@ -1998,7 +2068,7 @@ const EVENTS = [
       {
         label: '1位を目指して全力疾走！',
         fn() {
-          if (chance(S.health / 120 + (hasTrait('iron') ? 0.2 : 0))) {
+          if (chance(S.fitness / 120 + (hasTrait('iron') ? 0.2 : 0))) {
             fx({ health: 3, looks: 3, happy: 6 });
             playSE('fanfare');
             return '見事1位でゴールテープを切った！割れんばかりの大歓声を浴びた！';
@@ -2162,7 +2232,7 @@ const EVENTS = [
       {
         label: '練習の成果を堂々と披露する',
         fn() {
-          if (chance(S.looks / 130 + (hasTrait('artist') ? 0.3 : 0.1))) {
+          if (chance(S.creativity / 130 + (hasTrait('artist') ? 0.3 : 0.1))) {
             fx({ looks: 4, happy: 7, smarts: 2 });
             playSE('fanfare');
             return '見事な演奏で会場から拍手喝采を浴びた！大きな自信がついた！';
@@ -2233,7 +2303,7 @@ const EVENTS = [
       {
         label: '学級委員・リーダーに立候補する',
         fn() {
-          if (chance(S.looks / 130 + S.smarts / 200 + (hasTrait('charisma') ? 0.3 : 0))) {
+          if (chance(S.social / 130 + S.smarts / 200 + (hasTrait('charisma') ? 0.3 : 0))) {
             fx({ looks: 4, smarts: 3, happy: 4 });
             playSE('good');
             return 'みんなの推薦で学級委員に選出！クラスの頼れるリーダーになった！';
@@ -2260,7 +2330,7 @@ const EVENTS = [
   },
   {
     id: 'contest', icon: '🎤', title: 'のど自慢大会', min: 10, max: 30, once: true, text: '地元ののど自慢大会のポスターが目に入った。', choices: [
-      { label: '出場する！', fn() { if (chance(S.looks / 120 + 0.1 + (hasTrait('charisma') ? 0.2 : 0))) { fx({ happy: 8, looks: 4 }); playSE('fanfare'); return '見事優勝！ちょっとした有名人になった。'; } fx({ happy: -2, looks: 1 }); return '緊張で声が裏返った…でも良い経験になった。'; } },
+      { label: '出場する！', fn() { if (chance((S.social + S.creativity) / 240 + 0.1 + (hasTrait('charisma') ? 0.2 : 0))) { fx({ happy: 8, looks: 4 }); playSE('fanfare'); return '見事優勝！ちょっとした有名人になった。'; } fx({ happy: -2, looks: 1 }); return '緊張で声が裏返った…でも良い経験になった。'; } },
       { label: '客席から応援', fn() { fx({ happy: 1 }); return '楽しいひとときだった。'; } }]
   },
   {
@@ -2315,7 +2385,7 @@ const EVENTS = [
             playSE('good');
             return `${S.partner}は優しく握り返してくれた。最高の青春の思い出になった！（親密度 ${S.partnerLove}%）`;
           }
-          if (chance(0.35 + S.looks / 160 + (hasTrait('beloved') ? 0.2 : 0))) {
+          if (chance(0.35 + S.social / 160 + (hasTrait('beloved') ? 0.2 : 0))) {
             const p = randomPartner();
             setPartner(p, 70);
             fx({ happy: 10, looks: 2 });
@@ -2390,7 +2460,7 @@ const EVENTS = [
   {
     id: 'meet', icon: '💞', title: '運命の出会い？', min: 20, max: 50, p: 1.5, cond: () => !S.partner,
     text: () => { S.tmp = randomPartner(); return `友人の紹介で${S.tmp}と出会った。気になる…！`; }, choices: [
-      { label: '積極的にアプローチ', fn() { if (chance(0.25 + S.looks / 150 + (hasTrait('beloved') ? 0.2 : 0))) { setPartner(S.tmp, 70); fx({ happy: 8 }); playSE('good'); return `想いが通じ、${S.tmp}と交際を始めた！`; } fx({ happy: -4 }); return '残念、振られてしまった…'; } },
+      { label: '積極的にアプローチ', fn() { if (chance(0.25 + S.social / 150 + (hasTrait('beloved') ? 0.2 : 0))) { setPartner(S.tmp, 70); fx({ happy: 8 }); playSE('good'); return `想いが通じ、${S.tmp}と交際を始めた！`; } fx({ happy: -4 }); return '残念、振られてしまった…'; } },
       { label: '友達のままでいる', fn() { return '良い友人関係が続いた。'; } }]
   },
   {
@@ -2435,12 +2505,12 @@ const EVENTS = [
       { label: '辞表を叩きつける', danger: true, confirm: () => `本当に今の仕事「${jobTitle()}」に辞表を出して退職しますか？\n（無職になり、本業の収入がなくなります）`, fn() { const j = S.job.name; S.job = null; fx({ happy: 4 }); return `${j}を辞めた。スッキリしたが、明日からどうしよう。`; } }]
   },
   {
-    id: 'scout', icon: '📸', title: '芸能スカウト', min: 15, max: 28, once: true, cond: () => S.looks >= 68 || hasTrait('charisma'), text: '街を歩いていると、芸能事務所のスカウトに声をかけられた！', choices: [
-      { label: '芸能界に挑戦する', confirm: '現在の生活・仕事を離れて芸能界デビューに挑戦しますか？（失敗する可能性もあります）', fn() { if (chance(S.looks / 125 + (hasTrait('charisma') ? 0.2 : 0))) { S.student = false; setJob({ name: '芸能人', base: 900, icon: '🌟' }); S.flags.star = true; fx({ happy: 10, looks: 5 }); playSE('fanfare'); return 'デビューは大成功！一躍人気者になった！'; } fx({ happy: -5 }); return 'オーディションに落ち続け、夢を諦めた…'; } },
+    id: 'scout', icon: '📸', title: '芸能スカウト', min: 15, max: 28, once: true, cond: () => (S.social >= 65 || S.creativity >= 65 || hasTrait('charisma')), text: '街を歩いていると、芸能事務所のスカウトに声をかけられた！', choices: [
+      { label: '芸能界に挑戦する', confirm: '現在の生活・仕事を離れて芸能界デビューに挑戦しますか？（失敗する可能性もあります）', fn() { if (chance((S.social + S.creativity) / 250 + (hasTrait('charisma') ? 0.2 : 0))) { S.student = false; setJob({ name: '芸能人', base: 900, icon: '🌟' }); S.flags.star = true; fx({ happy: 10, looks: 5 }); playSE('fanfare'); return 'デビューは大成功！一躍人気者になった！'; } fx({ happy: -5 }); return 'オーディションに落ち続け、夢を諦めた…'; } },
       { label: '断る', fn() { return '平穏な暮らしを選んだ。'; } }]
   },
   {
-    id: 'sports', icon: '🏅', title: 'スポーツの才能', min: 13, max: 16, once: true, cond: () => (S.health >= 72 || hasTrait('iron')) && S.student, text: '部活の顧問から「君にはプロになれる才能がある」と言われた。', choices: [
+    id: 'sports', icon: '🏅', title: 'スポーツの才能', min: 13, max: 16, once: true, cond: () => (S.fitness >= 72 || hasTrait('iron')) && S.student, text: '部活の顧問から「君にはプロになれる才能がある」と言われた。', choices: [
       { label: 'プロを目指して練習漬け', fn() { S.flags.athlete = true; fx({ health: 6, smarts: -3 }); return '毎日限界まで練習に打ち込んだ。'; } },
       { label: '趣味として続ける', fn() { fx({ happy: 3 }); return '楽しくスポーツを続けた。'; } }]
   },
@@ -2771,7 +2841,7 @@ const WORLD_EVENTS = [
       {
         label: '🎬 自分も動画を制作して投稿してみる',
         fn() {
-          if (chance(0.35 + (S.looks / 160) + (hasTrait('charisma') ? 0.25 : 0) + (hasTrait('artist') ? 0.2 : 0))) {
+          if (chance(0.35 + (S.creativity / 160) + (hasTrait('charisma') ? 0.25 : 0) + (hasTrait('artist') ? 0.2 : 0))) {
             const fans = r(100, 300);
             fx({ looks: 6, happy: 8, money: fans });
             playSE('fanfare');
@@ -3330,9 +3400,10 @@ function pickEvent() {
 // ---------- 年末処理・寿命 ----------
 function deathCheck() {
   const a = S.age;
-  if (S.health <= 0) return '病気';
-  let p = a < 60 ? 0.0008 + (S.health < 20 ? 0.04 : 0) : 0.006 * Math.exp((a - 60) / 9);
-  p *= (1.6 - S.health / 100) * (hasTrait('iron') ? 0.72 : 1);
+  if (S.fitness <= 0) return '衰弱・大病';
+  let p = a < 60 ? 0.0008 + (S.fitness < 20 ? 0.04 : 0) : 0.006 * Math.exp((a - 60) / 9);
+  p *= (1.6 - S.fitness / 100) * (hasTrait('iron') ? 0.72 : 1);
+  if (S.happy < 15) p *= 1.35; // 精神的疲弊によるリスク増加
   if (a >= 115) p = 1;
   if (Math.random() < p) return a < 40 ? pick(['不慮の事故', '突然の病']) : a < 78 ? '病気' : '老衰';
   return null;
@@ -3340,20 +3411,47 @@ function deathCheck() {
 
 function yearEnd() {
   const a = S.age;
-  const jobInc = S.job ? salary() : (S.retired ? 180 : 0);
+  const rawJobInc = S.job ? salary() : (S.retired ? 180 : 0);
   const partnerInc = (S.married && S.partnerInfo) ? S.partnerInfo.job.inc : 0;
   const sideInc = S.sideJob ? calcSideJobIncome(S.sideJob) : 0;
   if (S.sideJob) {
-    // 本業と副業の両立による疲労（健康-1）
-    fx({ health: hasTrait('iron') ? 0 : -1 });
+    // 本業と副業の両立による疲労（体力-1）
+    fx({ fitness: hasTrait('iron') ? 0 : -1 });
   }
   const estateInc = estateRentIncome();
-  const filialInc = a >= 60 ? S.kids.filter(k => k.indep && k.supported).length * 45 : 0;
+  const filialInc = a >= 60 ? S.kids.filter(k => k.indep && k.supported).length * 40 : 0;
 
+  // 累進課税・社会保険料（所得に応じた現実的課税負担）
+  let taxRate = 0;
+  if (rawJobInc > 2000) taxRate = 0.42;
+  else if (rawJobInc > 1200) taxRate = 0.35;
+  else if (rawJobInc > 700) taxRate = 0.28;
+  else if (rawJobInc > 400) taxRate = 0.20;
+  else if (rawJobInc > 200) taxRate = 0.12;
+  const jobInc = Math.round(rawJobInc * (1 - taxRate));
+
+  // 不動産の維持・修繕イベント判定（年5%の確率で保有額の2%〜4%の修繕費）
+  let estateMaintenance = 0;
+  if (S.assets.estate > 0 && chance(0.08)) {
+    estateMaintenance = Math.round(S.assets.estate * (r(2, 4) / 100));
+  }
+
+  // 株式市場の変動（好況・通常・暴落のリアルな波）
   let stockGain = 0;
   if (S.assets.stock > 0) {
-    const rate = (r(-5, 12) + Math.floor(S.smarts / 35) + (hasTrait('lucky') ? 2 : 0) + (hasTrait('merchant') ? 2 : 0)) / 100;
-    stockGain = Math.round(S.assets.stock * rate);
+    let rate = 0;
+    const isCrash = chance(0.07); // 7%の確率で暴落（リーマン級）
+    const isBoom = chance(0.12);  // 12%の確率で好況ラリー
+    if (isCrash) {
+      rate = -r(15, 32); // -15%〜-32%の暴落
+      if (hasTrait('lucky')) rate = Math.round(rate * 0.6);
+      if (S.mbti && ['INTJ', 'ISTJ'].includes(S.mbti)) rate = Math.round(rate * 0.7); // 冷静な損切り
+    } else if (isBoom) {
+      rate = r(12, 28) + (hasTrait('lucky') ? 5 : 0);
+    } else {
+      rate = r(-10, 14) + Math.floor(S.smarts / 40) + (hasTrait('merchant') ? 2 : 0);
+    }
+    stockGain = Math.round(S.assets.stock * (rate / 100));
     S.assets.stock = Math.max(0, S.assets.stock + stockGain);
   }
 
@@ -3361,15 +3459,23 @@ function yearEnd() {
   let cost = 0;
   if (!S.student && a >= 15) {
     const depKids = S.kids.filter(k => a - k.birth < 22).length;
+    // 基本生活費（年齢・家族構成）
     cost = 100 + (a >= 18 ? 40 : 0) + (S.married ? 60 : 0) + depKids * 50;
+    // 老後（70代・80代）の医療費・健康ケア費用の増加
+    if (a >= 70) {
+      const oldAgeMedical = (a >= 80 ? 80 : 40) + (S.fitness < 40 ? 50 : 0);
+      cost += oldAgeMedical;
+    }
     if (hObj) cost = Math.max(40, cost - hObj.rentSave);
+    cost += estateMaintenance;
   }
+
   const inc = jobInc + partnerInc + sideInc + estateInc + filialInc;
   S.money += inc - cost;
 
   // 住まい・別荘・パートナーによる年間ボーナス
-  if (hObj) fx({ happy: hObj.happy, looks: hObj.id === 'tower' ? 1 : 0 });
-  if (S.assets.items.includes('villa')) fx({ happy: 2 });
+  if (hObj) fx({ happy: hObj.happy, social: hObj.id === 'tower' ? 1 : 0 });
+  if (S.assets.items.includes('villa')) fx({ happy: 2, creativity: 1 });
   if (S.partner) {
     if (S.partnerLove >= 80) fx({ happy: 2 });
     const decay = hasTrait('beloved') ? 1 : 2;
@@ -3378,7 +3484,7 @@ function yearEnd() {
 
   if (a >= 40) {
     const ageDmg = a >= 80 ? 3 : a >= 60 ? 2 : 1;
-    S.health = clamp(S.health - (hasTrait('iron') ? Math.max(1, ageDmg - 1) : ageDmg));
+    S.fitness = clamp(S.fitness - (hasTrait('iron') ? Math.max(1, ageDmg - 1) : ageDmg));
   }
   if (a >= 18 && S.money < -50) S.happy = clamp(S.happy - 2);
   if (S.happy > 75) S.happy -= 1;
@@ -3387,13 +3493,13 @@ function yearEnd() {
   S.happySum += S.happy; S.years++;
   const cause = deathCheck();
   if (cause) {
-    S.history.push({ age: S.age, happy: S.happy, health: S.health, wealth: totalWealth() });
+    S.history.push({ age: S.age, happy: S.happy, fitness: S.fitness, wealth: totalWealth() });
     S.cause = cause;
     return true;
   }
 
   S.age++;
-  S.history.push({ age: S.age, happy: S.happy, health: S.health, wealth: totalWealth() });
+  S.history.push({ age: S.age, happy: S.happy, fitness: S.fitness, wealth: totalWealth() });
   addSep(S.age, inc, cost, stockGain);
 
   // 子どもの成長ログ（7歳入学・22歳独立）
@@ -3448,7 +3554,6 @@ function renderSingleLog(item) {
 }
 
 let currentTab = 'action';
-const STAT_ICON = { health: '❤️', smarts: '🧠', looks: '✨', happy: '😊' };
 
 function switchTab(tab, silent = false) {
   if (!silent) playSE('click');
@@ -3498,11 +3603,13 @@ function renderAll() {
   const traitsBox = $('#hud-traits');
   if (traitsBox) {
     const genChip = S.gen > 1 ? `<span class="trait-chip gen">🧬 第${S.gen}世代</span>` : '';
+    const m = S.mbti ? mbtiObj(S.mbti) : null;
+    const mbtiChip = m ? `<span class="trait-chip mbti" title="${m.axis}（${m.name}）: ${m.desc}">🌱 ${m.axis}（${m.name}）</span>` : '';
     const tChips = (S.traits || []).map(id => {
       const t = traitObj(id);
       return t ? `<span class="trait-chip" title="${t.desc}">${t.icon} ${t.name}</span>` : '';
     }).join('');
-    traitsBox.innerHTML = genChip + tChips;
+    traitsBox.innerHTML = genChip + mbtiChip + tChips;
   }
 
   const ageEl = $('#hud-age');
@@ -3540,6 +3647,7 @@ function renderAll() {
   const rows = [
     ['世代・家系', `第${S.gen || 1}世代（${FAMILY[S.family].label}）`],
     ['性別・性的指向', `${genderLabel}（対象：${orientLabel}）`],
+    ['性格タイプ', S.mbti ? `${S.mbti}（${mbtiObj(S.mbti).name}）` : '未設定'],
     ['生まれの才能', (S.traits || []).map(id => traitObj(id)?.name).filter(Boolean).join('・') || 'なし'],
     ['学歴', finalEduText],
     ['職業', jobTitle()],
@@ -3999,7 +4107,9 @@ const ALL_ACHIEVEMENTS = [
   { icon: '💰', name: '億万長者', check: (s, w) => w >= 10000 },
   { icon: '📈', name: '大投資家', check: (s, w, f) => f >= 5000 },
   { icon: '🎓', name: '博識', check: (s) => s.smarts >= 90 },
-  { icon: '✨', name: '人気者', check: (s) => s.looks >= 90 },
+  { icon: '🤝', name: '人脈王', check: (s) => s.social >= 90 },
+  { icon: '💪', name: '鋼鉄の肉体', check: (s) => s.fitness >= 90 },
+  { icon: '🎨', name: '偉大な創作者', check: (s) => s.creativity >= 90 },
   { icon: '💍', name: '生涯の伴侶', check: (s) => s.married },
   { icon: '👨‍👩‍👧‍👦', name: '大家族', check: (s) => s.kids.length >= 3 },
   { icon: '👼', name: '孫に会えた', check: (s) => !!s.flags.grandchild },
@@ -4054,7 +4164,7 @@ function evaluate() {
 function renderChart() {
   const box = $('#end-chart');
   if (!box) return;
-  const hist = (S.history && S.history.length > 1) ? S.history : [{ age: 0, happy: 60, health: 60, wealth: 0 }, { age: S.age || 1, happy: S.happy, health: S.health, wealth: totalWealth() }];
+  const hist = (S.history && S.history.length > 1) ? S.history : [{ age: 0, happy: 60, fitness: 60, wealth: 0 }, { age: S.age || 1, happy: S.happy, fitness: S.fitness, wealth: totalWealth() }];
   const W = 600, H = 140, padX = 24, padY = 14;
   const maxAge = Math.max(1, hist[hist.length - 1].age);
   const maxW = Math.max(500, ...hist.map(h => Math.max(0, h.wealth)));
@@ -4064,14 +4174,14 @@ function renderChart() {
   const yOfWealth = w => H - padY - (clamp(w, 0, maxW) / maxW) * (H - padY * 2);
 
   const ptsHappy = hist.map(h => `${xOf(h.age).toFixed(1)},${yOfStat(h.happy).toFixed(1)}`).join(' ');
-  const ptsHealth = hist.map(h => `${xOf(h.age).toFixed(1)},${yOfStat(h.health).toFixed(1)}`).join(' ');
+  const ptsFit = hist.map(h => `${xOf(h.age).toFixed(1)},${yOfStat(h.fitness || h.health || 50).toFixed(1)}`).join(' ');
   const ptsWealth = hist.map(h => `${xOf(h.age).toFixed(1)},${yOfWealth(h.wealth).toFixed(1)}`).join(' ');
 
   box.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
       <line x1="${padX}" y1="${yOfStat(50)}" x2="${W - padX}" y2="${yOfStat(50)}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4"/>
       <polyline fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsWealth}"/>
-      <polyline fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsHealth}"/>
+      <polyline fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsFit}"/>
       <polyline fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${ptsHappy}"/>
       <text x="${padX}" y="${H - 1}" fill="#9aa0c3" font-size="11">0歳</text>
       <text x="${W / 2}" y="${H - 1}" fill="#9aa0c3" font-size="11" text-anchor="middle">${Math.round(maxAge / 2)}歳</text>
@@ -4079,7 +4189,7 @@ function renderChart() {
     </svg>
     <div class="chart-legend">
       <span><i style="background:#fbbf24"></i>幸福度</span>
-      <span><i style="background:#34d399"></i>健康</span>
+      <span><i style="background:#34d399"></i>体力</span>
       <span><i style="background:#a78bfa"></i>総資産（最大 ${fmtMoney(maxW)}）</span>
     </div>
   `;

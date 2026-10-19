@@ -6,9 +6,10 @@
   --glass-border: rgba(255, 255, 255, 0.12);
   --accent: #a78bfa;
   --accent2: #f472b6;
-  --c-health: #34d399;
+  --c-fitness: #34d399;
   --c-smarts: #60a5fa;
-  --c-looks: #f472b6;
+  --c-social: #f472b6;
+  --c-creativity: #c084fc;
   --c-happy: #fbbf24;
   --radius: 20px;
   --font: 'Zen Maru Gothic', system-ui, sans-serif;
@@ -148,6 +149,9 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
 .trait-chip.gen {
   background: rgba(52, 211, 153, .18); border-color: #34d399; color: #6ee7b7;
 }
+.trait-chip.mbti {
+  background: rgba(167, 139, 250, .2); border-color: #a78bfa; color: #ddd6fe;
+}
 
 .icon-btn {
   width: 52px; flex-shrink: 0; border-radius: 14px; background: rgba(255,255,255,.08);
@@ -235,21 +239,22 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
 /* ミニステータスバー（常時確認用・タップでステータスタブへ） */
 .mini-stats {
   grid-column: 1 / -1;
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
   padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08);
   cursor: pointer;
 }
 .mini-stat {
-  background: rgba(255,255,255,.04); border-radius: 10px; padding: 5px 8px;
+  background: rgba(255,255,255,.04); border-radius: 10px; padding: 4px 6px;
   transition: background .2s;
+  min-width: 0;
 }
 .mini-stats:hover .mini-stat { background: rgba(255,255,255,.08); }
 .mini-stat-top {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: .74rem; margin-bottom: 4px; white-space: nowrap;
+  font-size: .72rem; margin-bottom: 4px; white-space: nowrap; gap: 2px;
 }
-.mini-stat-top span { color: var(--muted); }
-.mini-stat-top b { font-family: var(--font-en); font-size: .82rem; color: var(--text); }
+.mini-stat-top span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.mini-stat-top b { font-family: var(--font-en); font-size: .8rem; color: var(--text); flex-shrink: 0; }
 .mini-bar { height: 4px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
 
 /* ===== タブナビゲーション ===== */
@@ -287,10 +292,11 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
 .stat-head b { font-family: var(--font-en); }
 .bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 99px; transition: width .7s cubic-bezier(.2,.8,.2,1); }
-.bar-fill.health { background: linear-gradient(90deg, #059669, var(--c-health)); }
-.bar-fill.smarts { background: linear-gradient(90deg, #2563eb, var(--c-smarts)); }
-.bar-fill.looks  { background: linear-gradient(90deg, #db2777, var(--c-looks)); }
-.bar-fill.happy  { background: linear-gradient(90deg, #d97706, var(--c-happy)); }
+.bar-fill.fitness    { background: linear-gradient(90deg, #059669, var(--c-fitness)); }
+.bar-fill.smarts     { background: linear-gradient(90deg, #2563eb, var(--c-smarts)); }
+.bar-fill.social     { background: linear-gradient(90deg, #db2777, var(--c-social)); }
+.bar-fill.creativity { background: linear-gradient(90deg, #9333ea, var(--c-creativity)); }
+.bar-fill.happy      { background: linear-gradient(90deg, #d97706, var(--c-happy)); }
 .bar-fill.low { animation: blink 1.2s ease-in-out infinite; }
 @keyframes blink { 50% { opacity: .45; } }
 
