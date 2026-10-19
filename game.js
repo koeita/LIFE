@@ -836,35 +836,44 @@ function jobHuntEvent() {
   const fitBonus = hasTrait('iron') ? 8 : 0;
   const creBonus = hasTrait('artist') ? 10 : 0;
 
-  const isEligible = j => {
-    // 1. 学歴要件（高卒・大卒等）
-    if (S.edu < j.edu) return false;
+  const checkJobEligibility = j => {
+    const reasons = [];
+
+    // 1. 学歴要件
+    if (S.edu < j.edu) {
+      reasons.push(`要: ${EDU_LABEL[j.edu]}以上`);
+    }
 
     // 2. ステータス要件（新マルチステータス判定）
     const req = j.req || {};
-    if (req.smarts && S.smarts + uniBonus + r(0, 8) < req.smarts) return false;
-    if (req.social && S.social + socBonus + r(0, 8) < req.social) return false;
-    if (req.fitness && S.fitness + fitBonus + r(0, 8) < req.fitness) return false;
-    if (req.creativity && S.creativity + creBonus + r(0, 8) < req.creativity) return false;
+    if (req.smarts && S.smarts + uniBonus < req.smarts) {
+      reasons.push(`要: 知力${req.smarts}（現在${S.smarts}）`);
+    }
+    if (req.social && S.social + socBonus < req.social) {
+      reasons.push(`要: 社交${req.social}（現在${S.social}）`);
+    }
+    if (req.fitness && S.fitness + fitBonus < req.fitness) {
+      reasons.push(`要: 体力${req.fitness}（現在${S.fitness}）`);
+    }
+    if (req.creativity && S.creativity + creBonus < req.creativity) {
+      reasons.push(`要: 創造${req.creativity}（現在${S.creativity}）`);
+    }
 
     // 3. 転職（中途採用）時の現実的フィルタリング
     if (isMidCareer) {
-      // 独占的ライセンス専門職（医師・弁護士・看護師など）は前職が同職種でなければ絶対に出ない！
       if (j.profOnly) {
-        if (j.name === '医師' && currentJobName !== '医師') return false;
-        if (j.name === '弁護士' && currentJobName !== '弁護士') return false;
-        if (j.name === '看護師' && currentJobName !== '看護師' && currentJobName !== '医師') return false;
+        if (j.name === '医師' && currentJobName !== '医師') reasons.push('要: 医師経験（中途未経験不可）');
+        if (j.name === '弁護士' && currentJobName !== '弁護士') reasons.push('要: 弁護士経験（中途未経験不可）');
+        if (j.name === '看護師' && currentJobName !== '看護師' && currentJobName !== '医師') reasons.push('要: 看護師経験（中途未経験不可）');
       }
-      // AI研究者は前職がAI研究者・エンジニア・研究開発職、または理系大学院卒でなければ出ない
       if (j.name === 'AI研究者') {
         const canResearch = ['AI研究者', 'エンジニア', '研究開発職'].includes(currentJobName) || (S.edu >= 4 && S.track === 'ri');
-        if (!canResearch) return false;
+        if (!canResearch) reasons.push('要: 技術職経験または理系院卒');
       }
-      // 理系技術職（エンジニア・研究開発職）は、前職が技術職、または理系・医歯薬出身でなければ出ない
       if (j.techOnly) {
         const isTechCareer = ['エンジニア', 'AI研究者', '研究開発職'].includes(currentJobName);
         const isScienceGrad = S.track === 'ri' || S.track === 'med' || S.hs === '商業・工業高校';
-        if (!isTechCareer && !isScienceGrad) return false;
+        if (!isTechCareer && !isScienceGrad) reasons.push('要: 技術職経験または理系専攻');
       }
     }
 
@@ -876,35 +885,63 @@ function jobHuntEvent() {
       const isAlreadyInJob = currentJobName === j.name;
 
       if (!matchesTrack && !isVocationalTech && !isAlreadyInJob) {
-        return false;
+        const trackNames = j.tracks.map(t => trackLabel(t)).join('/');
+        reasons.push(`要: ${trackNames}専攻`);
       }
     }
 
     // 5. 大学院修了要件（AI研究者）
     if (j.reqGrad && S.edu < 4 && S.uniRank < 3 && currentJobName !== j.name) {
-      return false;
+      reasons.push('要: 大学院修了');
     }
-
-    return true;
-  };
-
-  const eligibleJobs = JOBS.filter(j => j.name !== 'フリーター' && isEligible(j));
-  const offers = shuffle(eligibleJobs).slice(0, 4);
-
-  const choices = offers.map(j => {
-    let diffText = '';
-    if (S.job && S.job.base) {
-      const diffVal = j.base - salary();
-      diffText = `（現在比 ${diffVal >= 0 ? '+' : ''}${fmtMoney(diffVal)}）`;
-    }
-    const isSameJob = S.job && S.job.name === j.name;
-    const descText = j.desc ? ` ｜ ${j.desc}` : '';
-    const labelText = isSameJob
-      ? `${j.icon} ${j.name}（同業他社への転職 / 年収 ${j.base}万円）`
-      : `${j.icon} ${j.name}（年収 ${j.base}万円）${diffText}${descText}`;
 
     return {
-      label: labelText,
+      eligible: reasons.length === 0,
+      reasons
+    };
+  };
+
+  // 全職業をチェック（フリーター以外）
+  const evaluatedJobs = JOBS.filter(j => j.name !== 'フリーター').map(j => {
+    const res = checkJobEligibility(j);
+    return {
+      job: j,
+      eligible: res.eligible,
+      reasons: res.reasons
+    };
+  });
+
+  // 選べる職業（内定獲得）を年収降順でソート
+  const availableList = evaluatedJobs.filter(x => x.eligible).sort((a, b) => b.job.base - a.job.base);
+  // 選べない職業（ロック）を年収降順でソート
+  const lockedList = evaluatedJobs.filter(x => !x.eligible).sort((a, b) => b.job.base - a.job.base);
+
+  const choices = [];
+
+  // 1. 選べる職業（光るボタン）
+  availableList.forEach(({ job: j }) => {
+    let diffHtml = '';
+    if (S.job && S.job.base) {
+      const diffVal = j.base - salary();
+      const diffClass = diffVal > 0 ? 'up' : diffVal < 0 ? 'down' : '';
+      diffHtml = `<span class="job-income-diff ${diffClass}">（現在比 ${diffVal >= 0 ? '+' : ''}${fmtMoney(diffVal)}）</span>`;
+    }
+    const isSameJob = S.job && S.job.name === j.name;
+    const badgeText = isSameJob ? '現在の職種（同業他社）' : '✨ 内定獲得！';
+    const badgeClass = isSameJob ? 'current' : 'offer';
+
+    choices.push({
+      className: 'job-offer',
+      html: `
+        <div class="job-card-top">
+          <div class="job-card-title">${j.icon} ${j.name}</div>
+          <div class="job-card-income">${fmtMoney(j.base)}/年${diffHtml}</div>
+        </div>
+        ${j.desc ? `<div class="job-card-desc">${j.desc}</div>` : ''}
+        <div class="job-badge-row">
+          <span class="job-status-badge ${badgeClass}">${badgeText}</span>
+        </div>
+      `,
       confirm: () => S.job ? `現在の仕事「${jobTitle()}（年収 ${fmtMoney(salary())}）」を辞めて、「${j.name}（年収 ${j.base}万円）」へ転職しますか？` : '',
       fn() {
         setJob(j);
@@ -914,28 +951,51 @@ function jobHuntEvent() {
           ? `転職成功！【${j.name}】としての新たなキャリアをスタートした！`
           : `内定承諾！【${j.name}】として社会人の第一歩を踏み出した！`;
       }
-    };
+    });
   });
 
+  // 2. 選べない職業（暗いロックボタン）
+  lockedList.forEach(({ job: j, reasons }) => {
+    choices.push({
+      className: 'job-locked',
+      disabled: true,
+      html: `
+        <div class="job-card-top">
+          <div class="job-card-title">${j.icon} ${j.name}</div>
+          <div class="job-card-income">${fmtMoney(j.base)}/年</div>
+        </div>
+        ${j.desc ? `<div class="job-card-desc">${j.desc}</div>` : ''}
+        <div class="job-badge-row">
+          ${reasons.map(r => `<span class="job-req-badge">🔒 ${r}</span>`).join('')}
+        </div>
+      `,
+      fn() {}
+    });
+  });
+
+  // 3. フリーター（誰でも選べるセーフティネット）
   choices.push({
+    className: 'choice-freeter',
     label: '🧃 フリーターになる（年収 180万円）',
+    sub: '学歴・経歴不問 ｜ 気ままに働く自由人',
     confirm: () => S.job && S.job.name !== 'フリーター' ? `現在の仕事「${jobTitle()}（年収 ${fmtMoney(salary())}）」を辞めて、フリーター（年収 180万円）になりますか？` : '',
     danger: !!(S.job && S.job.name !== 'フリーター'),
     fn() { setJob(JOBS[0]); return 'フリーターとして気ままに働くことにした。'; }
   });
 
+  // 4. 今の仕事を続ける（キャンセルボタン：フッター固定）
   if (S.job) {
     choices.push({ label: '今の仕事を続ける（転職を見送る）', cancel: true, fn: () => '転職は見送り、現在の職場でキャリアを継続することにした。' });
   }
 
   const titleText = isMidCareer ? '🔄 転職活動' : '📨 就職活動';
-  const mainText = offers.length
+  const mainText = availableList.length
     ? (isMidCareer
-      ? `これまでのキャリアと学歴・専攻（${formatEduString()}）をもとに選考を受け、${offers.length}社から中途採用の内定を獲得した！転職先を選択しよう。`
-      : `就職活動の結果、学歴・専攻（${formatEduString()}）と実力を評価され、${offers.length}社から内定を獲得した！どこに就職する？`)
+      ? `学歴・専攻（${formatEduString()}）とキャリアを評価され、${availableList.length}社から中途内定を獲得！転職先を選択しよう。`
+      : `就職活動の結果、学歴・専攻（${formatEduString()}）と実力で${availableList.length}社から内定を獲得！どこに就職する？`)
     : (isMidCareer
-      ? '希望する求人の書類選考を通過できなかった…。現在の仕事を続けよう。'
-      : '残念ながら今回の就職活動では内定が出なかった…フリーターなどで経験を積もう。');
+      ? '希望求人の採用基準に届かなかった…。現在の仕事を続けよう。'
+      : '今回の就職活動では正社員の内定が出なかった…フリーターなどで経験を積もう。');
 
   return {
     icon: isMidCareer ? '🔄' : '📨',
@@ -3997,10 +4057,14 @@ function runEvent(ev) {
     visibleChoices.forEach((c, i) => {
       const b = document.createElement('button');
       const isSinglePrimary = visibleChoices.length === 1;
-      b.className = 'choice' + (isSinglePrimary ? ' primary' : c.cancel ? ' cancel' : c.dangerFill ? ' danger-fill' : c.danger ? ' danger' : '');
+      b.className = 'choice' + (isSinglePrimary ? ' primary' : c.cancel ? ' cancel' : c.dangerFill ? ' danger-fill' : c.danger ? ' danger' : '') + (c.className ? ' ' + c.className : '');
       b.id = `choice-${i + 1}`;
       b.disabled = typeof c.disabled === 'function' ? !!c.disabled() : !!c.disabled;
-      b.innerHTML = formatChoiceLabel(c);
+      if (c.html) {
+        b.innerHTML = typeof c.html === 'function' ? c.html() : c.html;
+      } else {
+        b.innerHTML = formatChoiceLabel(c);
+      }
 
       const executeChoice = () => {
         if (closeBtn) closeBtn.hidden = true;
