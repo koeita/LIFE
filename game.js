@@ -3647,50 +3647,89 @@ function renderAll() {
   const passiveInc = sideInc + estateRentIncome() + partnerInc;
   const genderLabel = { male: '男性', female: '女性', other: 'その他・指定なし' }[S.gender] || 'その他';
   const orientLabel = { hetero: '異性', homo: '同性', bi: '両性・誰でも' }[S.orientation] || '異性';
-  const rows = [
-    ['世代・家系', `第${S.gen || 1}世代（${FAMILY[S.family].label}）`],
-    ['性別・性的指向', `${genderLabel}（対象：${orientLabel}）`],
-    ['性格タイプ', S.mbti ? `${S.mbti}（${mbtiObj(S.mbti).name}）` : '未設定'],
-    ['生まれの才能', (S.traits || []).map(id => traitObj(id)?.name).filter(Boolean).join('・') || 'なし'],
-    ['学歴', finalEduText],
-    ['職業', jobTitle()],
-    ['本業年収', S.job ? fmtMoney(salary()) : S.retired ? '年金 180万円' : '—'],
+
+  const basicItems = [
+    { ic: '📜', label: '世代・家系', val: `第${S.gen || 1}世代（${FAMILY[S.family].label}）` },
+    { ic: '🚻', label: '性別・指向', val: `${genderLabel}（対象：${orientLabel}）` },
+    { ic: '🧩', label: '性格タイプ', val: S.mbti ? `${S.mbti}（${mbtiObj(S.mbti).name}）` : '未設定', isMbti: true },
+    { ic: '✨', label: '生まれの才能', val: (S.traits || []).map(id => traitObj(id)?.name).filter(Boolean).join('・') || 'なし', isTrait: true },
+  ];
+
+  const careerItems = [
+    { ic: '🎓', label: '学歴', val: finalEduText },
+    { ic: '💼', label: '職業・役職', val: jobTitle() },
+    { ic: '💴', label: '本業年収', val: S.job ? fmtMoney(salary()) : S.retired ? '年金 180万円' : '—' },
   ];
   if (S.sideJob) {
     const sj = SIDE_JOBS.find(j => j.id === S.sideJob.id) || { name: S.sideJob.name };
-    rows.push(['副業', `${sj.name}（年 +${fmtMoney(sideInc)}）`]);
+    careerItems.push({ ic: '💻', label: '副業', val: `${sj.name}（年 +${fmtMoney(sideInc)}）` });
   }
-  if (passiveInc > 0) rows.push(['副収入・共働き', `+${fmtMoney(passiveInc)}/年`]);
-  if (finAssets > 0) rows.push(['運用資産', fmtMoney(finAssets)]);
-  rows.push(['パートナー', partner]);
-  const kidsText = S.kids.length
+  if (passiveInc > 0) {
+    careerItems.push({ ic: '📈', label: '副収入・共働き', val: `+${fmtMoney(passiveInc)}/年` });
+  }
+
+  const lifeItems = [];
+  if (finAssets > 0) {
+    lifeItems.push({ ic: '🏦', label: '運用資産', val: fmtMoney(finAssets) });
+  }
+  lifeItems.push({ ic: S.married ? '💍' : '💖', label: 'パートナー', val: partner });
+  const kidsText = (S.kids && S.kids.length)
     ? `${S.kids.length}人（${S.kids.map(k => k.name).join('・')}）`
     : 'なし';
-  rows.push(['子ども', kidsText]);
+  lifeItems.push({ ic: '👶', label: '子ども', val: kidsText });
   const hObj = currentHouseObj();
-  if (hObj) rows.push(['住まい', hObj.name]);
-  else if (S.flags.house) rows.push(['住まい', '🏠 持ち家']);
+  if (hObj) lifeItems.push({ ic: '🏠', label: '住まい', val: hObj.name });
+  else if (S.flags.house) lifeItems.push({ ic: '🏠', label: '住まい', val: '持ち家' });
+  else lifeItems.push({ ic: '🏠', label: '住まい', val: '実家 / 賃貸' });
+
   const cObj = currentCarObj();
-  if (cObj) rows.push(['愛車', cObj.name]);
+  if (cObj) lifeItems.push({ ic: '🚗', label: '愛車', val: cObj.name });
   if (S.flags.pet) {
     const pets = [];
     if (S.assets.items.includes('dog')) pets.push('🐶 愛犬');
     const catName = S.flags.petName || 'こむぎ';
     pets.push(`🐱 ${catName}`);
-    rows.push(['ペット', pets.join('・')]);
+    lifeItems.push({ ic: '🐾', label: 'ペット', val: pets.join('・') });
   }
-  const fmtProfileVal = s => {
-    if (!s || s === 'なし' || s === '—') return s;
+
+  const sections = [
+    { title: '👤 基本・パーソナリティ', items: basicItems },
+    { title: '💼 キャリア・収入', items: careerItems },
+    { title: '🏡 暮らし・家族・資産', items: lifeItems },
+  ];
+
+  const fmtProfileVal = (item) => {
+    const s = item.val;
+    if (!s || s === 'なし' || s === '—') return `<span class="val-none">${s}</span>`;
+    if (item.isMbti && S.mbti) {
+      return `<span class="p-badge mbti">${S.mbti}</span> <span class="sub-val">${mbtiObj(S.mbti).name}</span>`;
+    }
+    if (item.isTrait && S.traits && S.traits.length > 0) {
+      return (S.traits || []).map(id => `<span class="p-badge trait">${traitObj(id)?.name}</span>`).join('');
+    }
     if (s.includes('（') && s.endsWith('）')) {
       const idx = s.indexOf('（');
-      return `<span class="ib">${s.slice(0, idx)}</span><span class="ib">${s.slice(idx)}</span>`;
+      return `<span class="main-val">${s.slice(0, idx)}</span><span class="sub-val">${s.slice(idx)}</span>`;
     }
     if (s.includes('・')) {
       return s.split('・').map(p => `<span class="ib">${p}</span>`).join('・');
     }
-    return s;
+    return `<span class="main-val">${s}</span>`;
   };
-  $('#profile').innerHTML = rows.map(([a, b]) => `<dt>${a}</dt><dd>${fmtProfileVal(b)}</dd>`).join('');
+
+  $('#profile').innerHTML = sections.map(sec => `
+    <div class="profile-group">
+      <div class="profile-group-title">${sec.title}</div>
+      <div class="profile-group-items">
+        ${sec.items.map(it => `
+          <div class="profile-item">
+            <div class="pi-label"><span class="pi-icon">${it.ic}</span><span>${it.label}</span></div>
+            <div class="pi-val">${fmtProfileVal(it)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
 
   renderActions();
   renderLifeMenu();

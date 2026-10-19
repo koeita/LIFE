@@ -208,22 +208,36 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
 /* ===== トップバー ===== */
 #screen-game { max-width: 860px; width: 100%; margin: 0 auto; }
 .topbar {
-  display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 12px 24px;
-  padding: 14px 22px; margin-bottom: 12px; width: 100%;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 14px 20px; margin-bottom: 12px; width: 100%;
 }
-.hud-name { font-size: 1.25rem; font-weight: 700; }
+.topbar-main {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+}
+.who {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0;
+}
+.hud-name { font-size: 1.25rem; font-weight: 700; white-space: nowrap; }
+.who-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .stage-chip {
   display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: .78rem; font-weight: 700;
   background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #160f2b;
 }
-.age-box { display: flex; align-items: baseline; gap: 4px; }
+.hud-controls {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto;
+}
+.topbar-sub {
+  display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 18px; width: 100%;
+}
+.age-box { display: flex; align-items: baseline; gap: 4px; flex-shrink: 0; }
 .age-num {
-  font-family: var(--font-en); font-size: 2.8rem; font-weight: 800; line-height: 1;
+  font-family: var(--font-en); font-size: 2.6rem; font-weight: 800; line-height: 1;
   background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .age-num.pop { animation: pop .5s ease; }
 @keyframes pop { 40% { transform: scale(1.25); } }
 .age-unit { color: var(--muted); }
+.lifebar-wrap { min-width: 0; width: 100%; }
 .lifebar-label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
 .lifebar-label > span:first-child { white-space: nowrap; flex-shrink: 0; }
 #hud-money { font-family: var(--font-en); color: var(--text); font-weight: 700; text-align: right; }
@@ -305,9 +319,101 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
 .bar-fill.low { animation: blink 1.2s ease-in-out infinite; }
 @keyframes blink { 50% { opacity: .45; } }
 
+/* プロフィール（カード型モダンUI） */
+.profile-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.profile-group {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  backdrop-filter: blur(8px);
+}
+.profile-group-title {
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+  letter-spacing: .02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.profile-group-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 12px;
+}
+.profile-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(0, 0, 0, .2);
+  border: 1px solid rgba(255, 255, 255, .05);
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-height: 42px;
+}
+.pi-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pi-icon { font-size: .95em; }
+.pi-val {
+  text-align: right;
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--text);
+  word-break: break-word;
+  line-height: 1.35;
+}
+.pi-val .main-val { display: inline-block; }
+.pi-val .sub-val {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 3px;
+  display: inline-block;
+}
+.pi-val .val-none {
+  color: var(--muted);
+  font-weight: 400;
+}
+.p-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.p-badge.mbti {
+  background: rgba(167, 139, 250, .22);
+  border: 1px solid #a78bfa;
+  color: #ddd6fe;
+}
+.p-badge.trait {
+  background: rgba(52, 211, 153, .18);
+  border: 1px solid #34d399;
+  color: #6ee7b7;
+  margin: 1px 2px;
+}
+
+/* 旧リスト型フォールバック */
 .profile { display: grid; grid-template-columns: max-content 1fr; gap: 10px 14px; font-size: .9rem; align-items: baseline; }
 .profile dt { color: var(--muted); white-space: nowrap; }
 .profile dd { text-align: right; font-weight: 500; line-height: 1.5; }
+
 
 /* 行動 */
 .action-heading { font-size: 1.35rem; margin-bottom: 4px; }
@@ -687,14 +793,61 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   /* ヘッダー */
   .topbar {
     flex: 0 0 auto;
-    grid-template-columns: 1fr auto; gap: 8px 12px; padding: 12px 14px; margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
     background: rgba(18, 18, 34, .82);
   }
-  .hud-name { font-size: 1.05rem; }
-  .stage-chip { font-size: .72rem; }
-  .age-num { font-size: 2.2rem; }
-  .lifebar-wrap { grid-column: 1 / -1; }
-  .lifebar-label { margin-bottom: 4px; font-size: .74rem; }
+  .topbar-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .who {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+  }
+  .hud-name { font-size: 1.05rem; line-height: 1.2; }
+  .who-chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 0;
+  }
+  .stage-chip { font-size: .68rem; padding: 2px 7px; }
+  .trait-chip { font-size: .66rem; padding: 2px 6px; }
+  .hud-controls {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .tiny-btn {
+    font-size: .72rem;
+    padding: 4px 8px;
+  }
+  #btn-sound { width: auto; min-width: 60px; }
+  .topbar-sub {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+  .age-box { display: flex; align-items: baseline; gap: 2px; }
+  .age-num { font-size: 2.1rem; }
+  .lifebar-wrap { min-width: 0; width: 100%; }
+  .lifebar-label { margin-bottom: 3px; font-size: .72rem; }
   .lifebar { height: 6px; }
   .mini-stats { gap: 4px; padding-top: 6px; }
   .mini-stat {
@@ -757,6 +910,14 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   .life-menu-grid { grid-template-columns: 1fr; gap: 8px; }
 
   .stats { grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+  .profile-cards { gap: 10px; }
+  .profile-group { padding: 10px 12px; border-radius: 14px; }
+  .profile-group-title { font-size: .82rem; margin-bottom: 8px; }
+  .profile-group-items { grid-template-columns: 1fr; gap: 6px; }
+  .profile-item { padding: 7px 10px; min-height: 38px; }
+  .pi-label { font-size: .76rem; }
+  .pi-val { font-size: .82rem; }
+  .pi-val .sub-val { font-size: .72rem; }
   .profile { font-size: .85rem; gap: 10px 12px; }
   .log { max-height: none; height: auto; }
 
