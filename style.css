@@ -659,6 +659,22 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
     padding-left: max(12px, env(safe-area-inset-left));
     padding-right: max(12px, env(safe-area-inset-right));
   }
+  body[data-stage]:not([data-stage="start"]):not([data-stage="end"]) {
+    overflow: hidden;
+    height: 100dvh;
+  }
+  #app {
+    height: 100%;
+    min-height: 0;
+  }
+  #screen-game {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
   .blob { filter: blur(60px); }
   .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 
@@ -670,6 +686,7 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
 
   /* ヘッダー */
   .topbar {
+    flex: 0 0 auto;
     grid-template-columns: 1fr auto; gap: 8px 12px; padding: 12px 14px; margin-bottom: 8px;
     background: rgba(18, 18, 34, .82);
   }
@@ -700,7 +717,7 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   .mini-bar { height: 3px; }
 
   /* タブバー */
-  .game-tabs { padding: 4px; gap: 4px; margin-bottom: 10px; }
+  .game-tabs { flex: 0 0 auto; padding: 4px; gap: 4px; margin-bottom: 8px; }
   .tab-btn {
     padding: 9px 4px; gap: 3px;
     font-size: clamp(.68rem, 2.85vw, .8rem);
@@ -710,8 +727,25 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   }
   .tab-btn .tab-ic { font-size: .9em; }
 
-  /* パネル */
-  .panel { padding: 16px; }
+  /* レイアウト＆独立スクロールパネル */
+  .layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel {
+    padding: 14px 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
   .action-heading { font-size: 1.15rem; }
   .hint { margin-bottom: 12px; }
   .action-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -719,11 +753,12 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   .action .a-icon { font-size: 1.6rem; margin-bottom: 6px; }
   .action .a-label { font-size: .9rem; }
   .action .a-desc { font-size: .72rem; }
+  .life-menu-wrap { margin-top: 18px; padding-top: 16px; }
   .life-menu-grid { grid-template-columns: 1fr; gap: 8px; }
 
   .stats { grid-template-columns: 1fr 1fr; gap: 12px 16px; }
   .profile { font-size: .85rem; gap: 10px 12px; }
-  .log { max-height: 55vh; }
+  .log { max-height: none; height: auto; }
 
   /* モーダルは画面下からのシート型 */
   .modal { place-items: end center; padding: 0; }
