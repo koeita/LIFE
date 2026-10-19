@@ -3604,10 +3604,10 @@ function renderAll() {
   if (traitsBox) {
     const genChip = S.gen > 1 ? `<span class="trait-chip gen">🧬 第${S.gen}世代</span>` : '';
     const m = S.mbti ? mbtiObj(S.mbti) : null;
-    const mbtiChip = m ? `<span class="trait-chip mbti" title="${m.axis}（${m.name}）: ${m.desc}">🌱 ${m.axis}（${m.name}）</span>` : '';
+    const mbtiChip = m ? `<button type="button" class="trait-chip mbti clickable" onclick="showMbtiDetail('${m.axis}')" title="${m.axis}（${m.name}）の説明を表示">🌱 ${m.axis}（${m.name}） ℹ️</button>` : '';
     const tChips = (S.traits || []).map(id => {
       const t = traitObj(id);
-      return t ? `<span class="trait-chip" title="${t.desc}">${t.icon} ${t.name}</span>` : '';
+      return t ? `<button type="button" class="trait-chip clickable" onclick="showTraitDetail('${t.id}')" title="${t.name}の説明を表示">${t.icon} ${t.name} ℹ️</button>` : '';
     }).join('');
     traitsBox.innerHTML = genChip + mbtiChip + tChips;
   }
@@ -3702,10 +3702,23 @@ function renderAll() {
     const s = item.val;
     if (!s || s === 'なし' || s === '—') return `<span class="val-none">${s}</span>`;
     if (item.isMbti && S.mbti) {
-      return `<span class="p-badge mbti">${S.mbti}</span> <span class="sub-val">${mbtiObj(S.mbti).name}</span>`;
+      return `
+        <div class="val-with-btn">
+          <span class="p-badge mbti">${S.mbti}</span> <span class="sub-val">${mbtiObj(S.mbti).name}</span>
+          <button type="button" class="btn-info-inline" onclick="showMbtiDetail('${S.mbti}')" title="性格の詳細説明を表示">説明 ℹ️</button>
+        </div>`;
     }
-    if (item.isTrait && S.traits && S.traits.length > 0) {
-      return (S.traits || []).map(id => `<span class="p-badge trait">${traitObj(id)?.name}</span>`).join('');
+    if (item.isTrait) {
+      if (S.traits && S.traits.length > 0) {
+        return `
+          <div class="val-with-btn">
+            ${(S.traits || []).map(id => {
+              const t = traitObj(id);
+              return `<button type="button" class="p-badge trait clickable" onclick="showTraitDetail('${id}')" title="${t?.name}の詳細説明を表示">${t?.icon || ''}${t?.name} ℹ️</button>`;
+            }).join(' ')}
+          </div>`;
+      }
+      return `<span class="val-none">なし</span>`;
     }
     if (s.includes('（') && s.endsWith('）')) {
       const idx = s.indexOf('（');
@@ -4087,6 +4100,85 @@ function runEvent(ev) {
     openModal();
   });
 }
+
+function showMbtiDetail(mbtiKey) {
+  const m = mbtiObj(mbtiKey);
+  if (!m) return;
+  const statNames = {
+    smarts: '🧠 知力',
+    fitness: '💪 体力',
+    social: '🤝 社交',
+    creativity: '🎨 創造',
+    happy: '😊 幸福'
+  };
+  const biasRows = [];
+  if (m.bias) {
+    for (const [k, v] of Object.entries(m.bias)) {
+      const upDown = v >= 1.0 ? 'up' : 'down';
+      const mark = v >= 1.0 ? '📈' : '📉';
+      const pct = Math.round(v * 100);
+      biasRows.push(`<div class="bias-item ${upDown}"><span>${statNames[k] || k}</span><b>${mark} ×${v}（${pct}%）</b></div>`);
+    }
+  }
+
+  const html = `
+    <div class="detail-modal-body">
+      <div class="detail-type-badge">${m.axis}</div>
+      <h3 class="detail-type-title">「${m.name}」</h3>
+      <p class="detail-type-desc">${m.desc}</p>
+      <div class="detail-section">
+        <div class="detail-sec-head">📊 ステータス成長補正</div>
+        <div class="bias-grid">
+          ${biasRows.length ? biasRows.join('') : '<div class="bias-item">標準バランス型（等倍）</div>'}
+        </div>
+      </div>
+      <p class="detail-note">※行動や選択肢による該当ステータスの獲得量に補正ボーナスがかかります。</p>
+    </div>
+  `;
+
+  playSE('click');
+  runEvent({
+    badge: 'PERSONALITY INFO',
+    icon: '🌱',
+    title: `性格：${m.axis}（${m.name}）`,
+    html: html,
+    choices: [
+      { label: '閉じる', cancel: true, fn() {} }
+    ]
+  });
+}
+
+function showTraitDetail(traitId) {
+  const t = traitObj(traitId);
+  if (!t) return;
+  const html = `
+    <div class="detail-modal-body">
+      <div class="detail-type-badge trait">${t.icon}</div>
+      <h3 class="detail-type-title">「${t.name}」</h3>
+      <p class="detail-type-desc">${t.desc}</p>
+      <div class="detail-section">
+        <div class="detail-sec-head">✨ 才能の特徴</div>
+        <div class="trait-feature-box">
+          生まれつき授かった固有の才能です。生涯にわたって成長や進学・就職、収入や成功率等に強力な効果を発揮します。
+        </div>
+      </div>
+    </div>
+  `;
+
+  playSE('click');
+  runEvent({
+    badge: 'TALENT INFO',
+    icon: t.icon || '✨',
+    title: `才能：${t.name}`,
+    html: html,
+    choices: [
+      { label: '閉じる', cancel: true, fn() {} }
+    ]
+  });
+}
+
+window.showMbtiDetail = showMbtiDetail;
+window.showTraitDetail = showTraitDetail;
 
 // ---------- 1年の進行 ----------
 async function doAction(act) {

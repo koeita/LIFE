@@ -143,8 +143,22 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
 .who-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .trait-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .trait-chip {
-  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; font-family: inherit;
   background: rgba(255,255,255,.1); border: 1px solid var(--glass-border); color: var(--text);
+  line-height: 1.2; text-align: center;
+}
+.trait-chip.clickable {
+  cursor: pointer;
+  transition: transform .15s, filter .15s, box-shadow .15s;
+}
+.trait-chip.clickable:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.trait-chip.clickable:active {
+  transform: translateY(0) scale(.97);
 }
 .trait-chip.gen {
   background: rgba(52, 211, 153, .18); border-color: #34d399; color: #6ee7b7;
@@ -407,6 +421,142 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
   border: 1px solid #34d399;
   color: #6ee7b7;
   margin: 1px 2px;
+}
+
+.p-badge.clickable {
+  cursor: pointer;
+  transition: transform .15s, filter .15s, box-shadow .15s;
+  font-family: inherit;
+  border-style: solid;
+}
+.p-badge.clickable:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.p-badge.clickable:active {
+  transform: translateY(0) scale(.96);
+}
+
+.val-with-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.btn-info-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: .72rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.btn-info-inline:hover {
+  background: var(--accent);
+  color: #160f2b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.btn-info-inline:active {
+  transform: translateY(0) scale(.96);
+}
+
+/* 性格・才能の詳細説明モーダル用 */
+.detail-modal-body {
+  text-align: center;
+  padding: 4px 0 8px;
+}
+.detail-type-badge {
+  display: inline-block;
+  font-family: var(--font-en);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: .08em;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(167, 139, 250, .22);
+  border: 1px solid #a78bfa;
+  color: #ddd6fe;
+  margin-bottom: 6px;
+}
+.detail-type-badge.trait {
+  background: rgba(52, 211, 153, .18);
+  border-color: #34d399;
+  color: #6ee7b7;
+  font-size: 1.4rem;
+  padding: 4px 12px;
+}
+.detail-type-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.detail-type-desc {
+  font-size: .92rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  margin-bottom: 14px;
+  background: rgba(0, 0, 0, .22);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .06);
+  text-align: left;
+}
+.detail-section {
+  text-align: left;
+  margin-bottom: 10px;
+}
+.detail-sec-head {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.bias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 6px;
+}
+.bias-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .05);
+  font-size: .8rem;
+  border: 1px solid rgba(255, 255, 255, .06);
+}
+.bias-item.up b { color: #6ee7b7; }
+.bias-item.down b { color: #fda4af; }
+.trait-feature-box {
+  background: rgba(52, 211, 153, .08);
+  border: 1px solid rgba(52, 211, 153, .25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: #d1fae5;
+}
+.detail-note {
+  font-size: .74rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 8px;
+  text-align: left;
 }
 
 /* 旧リスト型フォールバック */
