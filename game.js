@@ -630,6 +630,29 @@ function stageLabel() {
   return { baby: '赤ちゃん', kid: '幼児', elem: '小学生', worker: '社会人', athlete: 'プロアスリート', jobless: '求職中', senior: 'セカンドライフ' }[st];
 }
 
+function currentOccupationBadge() {
+  if (S.ronin) return `📚 浪人生（${S.ronin}浪目）`;
+  const st = stage();
+  if (st === 'baby') return '🍼 赤ちゃん';
+  if (st === 'kid') return '⚽ 幼児';
+  if (st === 'elem') return '🎒 小学生';
+  if (st === 'teen') {
+    if (S.age < 15) return S.jh ? `🏫 中学生（${S.jh}）` : '🏫 中学生';
+    return S.hs ? `🎓 高校生（${S.hs}）` : '🎓 高校生';
+  }
+  if (st === 'college') {
+    if (S.gradSchool) return `🎓 大学院生（${S.gradSchool}）`;
+    if (S.uni) return `🎓 大学生（${S.uni}）`;
+    return S.uniRank >= 2 ? '🎓 大学生（難関大）' : '🎓 大学生';
+  }
+  if (S.retired) return '🕊️ 年金生活';
+  if (S.job) {
+    const icon = S.job.icon || '💼';
+    return `${icon} ${jobTitle()}`;
+  }
+  return '🔍 求職中';
+}
+
 // ---------- 行動 ----------
 const ACTIONS = {
   baby: [
@@ -3598,7 +3621,8 @@ function renderAll() {
   const st = stage();
   document.body.dataset.stage = st;
   $('#hud-name').textContent = S.name;
-  $('#hud-stage').textContent = stageLabel();
+  if ($('#hud-stage')) $('#hud-stage').textContent = stageLabel();
+  if ($('#hud-job')) $('#hud-job').innerHTML = currentOccupationBadge();
 
   const traitsBox = $('#hud-traits');
   if (traitsBox) {

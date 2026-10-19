@@ -70,16 +70,17 @@
     <section id="screen-game" class="screen">
       <header class="topbar glass">
         <div class="topbar-main">
-          <div class="who">
+          <div class="hud-top-row">
             <div id="hud-name" class="hud-name"></div>
-            <div class="who-chips">
-              <div id="hud-stage" class="stage-chip"></div>
-              <div id="hud-traits" class="trait-chips"></div>
+            <div class="hud-controls">
+              <button id="btn-sound" class="tiny-btn" title="効果音 ON/OFF">🔊 音ON</button>
+              <button id="btn-menu" class="tiny-btn" title="セーブしてメインメニューへ戻る">🏠 メインメニュー</button>
             </div>
           </div>
-          <div class="hud-controls">
-            <button id="btn-sound" class="tiny-btn" title="効果音 ON/OFF">🔊 音ON</button>
-            <button id="btn-menu" class="tiny-btn" title="セーブしてメインメニューへ戻る">🏠 メインメニュー</button>
+          <div class="who-details">
+            <div id="hud-job" class="hud-job-badge"></div>
+            <div id="hud-stage" class="stage-chip" style="display:none;"></div>
+            <div id="hud-traits" class="trait-chips"></div>
           </div>
         </div>
         <div class="topbar-sub">

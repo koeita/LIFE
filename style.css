@@ -226,19 +226,31 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
   padding: 14px 20px; margin-bottom: 12px; width: 100%;
 }
 .topbar-main {
+  display: flex; flex-direction: column; gap: 8px; width: 100%;
+}
+.hud-top-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
 }
-.who {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0;
-}
-.hud-name { font-size: 1.25rem; font-weight: 700; white-space: nowrap; }
-.who-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.stage-chip {
-  display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: .78rem; font-weight: 700;
-  background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #160f2b;
+.hud-name {
+  font-size: 1.35rem; font-weight: 800; color: #fff;
+  letter-spacing: .02em; min-width: 0;
 }
 .hud-controls {
   display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto;
+}
+.who-details {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px; width: 100%;
+}
+.hud-job-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 12px; border-radius: 999px; font-size: .82rem; font-weight: 700;
+  background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
+  border: 1px solid rgba(255,255,255,.18); color: var(--text);
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+}
+.stage-chip {
+  display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: .78rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #160f2b;
 }
 .topbar-sub {
   display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 18px; width: 100%;
@@ -946,35 +958,32 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 12px 14px 10px;
     margin-bottom: 8px;
-    background: rgba(18, 18, 34, .82);
+    background: rgba(18, 18, 34, .85);
   }
   .topbar-main {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     width: 100%;
   }
-  .who {
+  .hud-top-row {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    min-width: 0;
-    flex: 1;
-  }
-  .hud-name { font-size: 1.05rem; line-height: 1.2; }
-  .who-chips {
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 0;
+    gap: 10px;
+    width: 100%;
   }
-  .stage-chip { font-size: .68rem; padding: 2px 7px; }
-  .trait-chip { font-size: .66rem; padding: 2px 6px; }
+  .hud-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .hud-controls {
     flex-shrink: 0;
     display: flex;
@@ -985,7 +994,22 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   .tiny-btn {
     font-size: .72rem;
     padding: 4px 8px;
+    border-radius: 8px;
   }
+  #btn-sound { width: auto; min-width: 60px; }
+  .who-details {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .hud-job-badge {
+    font-size: .74rem;
+    padding: 3px 9px;
+  }
+  .stage-chip { font-size: .68rem; padding: 2px 7px; }
+  .trait-chip { font-size: .66rem; padding: 2px 7px; }
   #btn-sound { width: auto; min-width: 60px; }
   .topbar-sub {
     display: grid;
