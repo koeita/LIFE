@@ -367,10 +367,10 @@ function savePrefs() {
 
 // ---------- コレクション・殿堂入りメタデータ ----------
 function loadMeta() {
-  let res = { ach: {}, jobs: {}, traits: {}, titles: {}, hof: [], maxGen: 1 };
+  let res = { ach: {}, jobs: {}, traits: {}, titles: {}, hof: [], totalLives: 0 };
   try {
     const m = JSON.parse(localStorage.getItem('life_sim_meta') || 'null');
-    if (m) res = { ach: m.ach || {}, jobs: m.jobs || {}, traits: m.traits || {}, titles: m.titles || {}, hof: m.hof || [], maxGen: m.maxGen || 1 };
+    if (m) res = { ach: m.ach || {}, jobs: m.jobs || {}, traits: m.traits || {}, titles: m.titles || {}, hof: m.hof || [], totalLives: m.totalLives || (m.hof ? m.hof.length : 0) };
   } catch (e) {}
   if (!res.hof.length) {
     try {
@@ -393,7 +393,6 @@ function recordMetaTraitAndJob() {
   const m = loadMeta();
   (S.traits || []).forEach(t => { m.traits[t] = true; });
   if (S.job && S.job.name) m.jobs[S.job.name] = true;
-  if ((S.gen || 1) > (m.maxGen || 1)) m.maxGen = S.gen;
   saveMeta(m);
 }
 
@@ -2527,14 +2526,14 @@ function openHouseMenu() {
         S.assets.house = h.id;
         S.flags.house = true;
         playSE('fanfare');
-        return { text: `${h.name}を購入した！理想の暮らしが始まる！（世代継承で子どもにも引き継がれます）`, then: openAssetMenu() };
+        return { text: `${h.name}を購入した！理想のマイホーム生活が始まる！`, then: openAssetMenu() };
       }
     };
   });
   choices.push({ label: '← 資産メニューに戻る', cancel: true, silent: true, fn: () => ({ then: openAssetMenu() }) });
   return {
     icon: '🏠', title: '住まいを購入・住み替え',
-    text: `現在の住まい：${cur ? `${cur.name}（下取り査定 ${fmtMoney(tradeIn)}）` : '賃貸'}｜貯金：${fmtMoney(S.money)}\n持ち家を購入すると毎年の生活費（家賃）が節約され、子どもへの世代交代時にも引き継がれます。`,
+    text: `現在の住まい：${cur ? `${cur.name}（下取り査定 ${fmtMoney(tradeIn)}）` : '賃貸'}｜貯金：${fmtMoney(S.money)}\n持ち家を購入すると毎年の生活費（家賃）が節約されます。`,
     choices,
   };
 }
@@ -4485,7 +4484,7 @@ function renderAll() {
 
   const traitsBox = $('#hud-traits');
   if (traitsBox) {
-    const genChip = S.gen > 1 ? `<span class="trait-chip gen">🧬 第${S.gen}世代</span>` : '';
+    const genChip = '';
     const m = S.mbti ? mbtiObj(S.mbti) : null;
     const mbtiChip = m ? `<button type="button" class="trait-chip mbti clickable" onclick="showMbtiDetail('${m.axis}')" title="${m.axis}（${m.name}）の説明を表示">🌱 ${m.axis}（${m.name}） ℹ️</button>` : '';
     const tChips = (S.traits || []).map(id => {
@@ -4585,7 +4584,7 @@ function renderAll() {
   const orientLabel = { hetero: '異性', homo: '同性', bi: '両性・誰でも' }[S.orientation] || '異性';
 
   const basicItems = [
-    { ic: '📜', label: '世代・家系', val: `第${S.gen || 1}世代（${FAMILY[S.family].label}）` },
+    { ic: '🏠', label: '生まれ・実家', val: FAMILY[S.family].label },
     { ic: '🚻', label: '性別・指向', val: `${genderLabel}（対象：${orientLabel}）` },
     { ic: '🧩', label: '性格タイプ', val: S.mbti ? `${S.mbti}（${mbtiObj(S.mbti).name}）` : '未設定', isMbti: true },
     { ic: '✨', label: '生まれの才能', val: (S.traits || []).map(id => traitObj(id)?.name).filter(Boolean).join('・') || 'なし', isTrait: true },
@@ -5260,7 +5259,7 @@ async function doAction(act) {
   }
 }
 
-// ---------- エンディング・人生グラフ・世代継承 ----------
+// ---------- エンディング・人生グラフ ----------
 const ALL_ACHIEVEMENTS = [
   { icon: '🎂', name: '百寿者', check: (s) => s.age >= 100 },
   { icon: '🐢', name: '長寿', check: (s) => s.age >= 90 },
@@ -5391,7 +5390,7 @@ function showEnd() {
   const e = evaluate();
   playSE('fanfare');
   document.body.dataset.stage = 'end';
-  $('#end-name').textContent = S.gen > 1 ? `${S.name}（第${S.gen}世代）` : S.name;
+  $('#end-name').textContent = S.name;
   $('#end-span').textContent = `享年 ${S.age}歳 ｜ 死因：${S.cause}`;
   const rankLower = (e.rank || 'c').toLowerCase();
   const rankSubMap = { s: 'LEGEND', a: 'GREAT', b: 'GOOD', c: 'NORMAL', d: 'HARD' };
@@ -5425,7 +5424,7 @@ function showEnd() {
   meta.titles[e.title] = true;
   (S.traits || []).forEach(t => { meta.traits[t] = true; });
   if (S.job && S.job.name) meta.jobs[S.job.name] = true;
-  if ((S.gen || 1) > (meta.maxGen || 1)) meta.maxGen = S.gen;
+  meta.totalLives = (meta.totalLives || 0) + 1;
   meta.hof.push(hofEntry);
   meta.hof.sort((a, b) => b.score - a.score);
   meta.hof = meta.hof.slice(0, 10);
@@ -5444,7 +5443,7 @@ function showEnd() {
 let lastShare = null;
 
 function buildShareData(e, finalEdu = null) {
-  const nameLabel = S.gen > 1 ? `${S.name}（第${S.gen}世代）` : S.name;
+  const nameLabel = S.name;
   const job = S.retired ? '退職' : jobTitle();
   const family = `${S.married ? '配偶者あり' : '独身'}・子${S.kids.length}人`;
   const eduStr = finalEdu || formatEduString();
@@ -5471,14 +5470,14 @@ function buildShareData(e, finalEdu = null) {
 }
 
 function buildHofShareData(h, rankIdx = 0) {
-  const nameLabel = (h.gen || 1) > 1 ? `${h.name}（第${h.gen}世代）` : h.name;
+  const nameLabel = h.name;
   const causePart = h.cause ? `（${h.cause}）` : '';
   const stats = [
     ['平均幸福度', h.avg !== undefined ? String(h.avg) : '—'],
     ['最終総資産', fmtMoney(h.wealth || 0)],
     ['学歴', h.eduLabel || '—'],
     ['最終職業', h.job || '—'],
-    ['家族', h.family || `第${h.gen || 1}世代`],
+    ['家族', h.family || '一般家庭'],
     ['実績', h.achText || `殿堂入り #${rankIdx + 1}`],
   ];
   const url = /^https?:/.test(location.protocol) ? location.href.split('#')[0] : '';
@@ -5514,7 +5513,6 @@ function buildCollectionShareData(m) {
     ['実績コンプ', `${achGot} / ${ALL_ACHIEVEMENTS.length}`],
     ['職業図鑑', `${jobGot} / ${allJobs.length}`],
     ['才能図鑑', `${traitGot} / ${TRAITS.length}`],
-    ['最高到達世代', `第${m.maxGen || 1}世代`],
     ['殿堂入り数', `${(m.hof || []).length}人`],
     ['歴代最高資産', top ? fmtMoney(top.wealth || 0) : '—'],
   ];
@@ -5523,7 +5521,6 @@ function buildCollectionShareData(m) {
     '🌱 LIFE ― ひとつの人生（コレクション図鑑）',
     top ? `🏆 歴代1位：${top.name}（享年${top.age}歳）ランク ${top.rank}「${top.title}」SCORE ${top.score}` : '📖 コレクション記録',
     `🎖️ 実績 ${achGot}/${ALL_ACHIEVEMENTS.length} ／ 💼 職業 ${jobGot}/${allJobs.length} ／ 🧬 才能 ${traitGot}/${TRAITS.length}`,
-    `🧬 最高到達：第${m.maxGen || 1}世代`,
     '#LIFEひとつの人生',
     url,
   ].filter(Boolean).join('\n');
@@ -5534,7 +5531,7 @@ function buildCollectionShareData(m) {
     score: top ? top.score : achGot * 10,
     age: top ? top.age : 0,
     cause: '',
-    subtitle: `最高到達：第${m.maxGen || 1}世代 ｜ 実績 ${achGot}/${ALL_ACHIEVEMENTS.length}`,
+    subtitle: `殿堂入り：${(m.hof || []).length}人 ｜ 実績 ${achGot}/${ALL_ACHIEVEMENTS.length}`,
     stats, text, url,
   };
 }
@@ -5668,7 +5665,7 @@ async function openCollectionModal() {
         <li class="hof-item">
           <span class="hof-rank">${i + 1}</span>
           <div class="hof-main">
-            <b>${h.name}（第${h.gen || 1}世代・享年${h.age}）</b>
+            <b>${h.name}（享年${h.age}歳）</b>
             <small>「${h.title}」｜総資産 ${fmtMoney(h.wealth || 0)}</small>
           </div>
           <div class="hof-right">
@@ -5693,7 +5690,7 @@ async function openCollectionModal() {
   const html = `
     <div class="col-wrap">
       <div>
-        <div class="col-sec-title">🏆 歴代ベスト人生（殿堂入り TOP10 ｜ 最高到達：第${m.maxGen || 1}世代）</div>
+        <div class="col-sec-title">🏆 歴代ベスト人生（殿堂入り TOP10）</div>
         ${hofHTML}
       </div>
       <div>
