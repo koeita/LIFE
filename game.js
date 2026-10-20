@@ -299,10 +299,19 @@ const CAT_NAMES = [
   'あずき', 'おもち', 'ふく', 'ラテ', 'ミケ', 'ぽんず', 'だいふく', 'ハク'
 ];
 
+const HOBBIES = [
+  { id: 'cook', name: '🍳 料理・燻製', icon: '🍳', desc: '食材と火加減を極める手料理（体力・幸福）', bias: 'fitness' },
+  { id: 'camp', name: '🏕️ キャンプ・登山', icon: '🏕️', desc: '大自然の中で焚き火と絶景を愛でる（体力・幸福）', bias: 'fitness' },
+  { id: 'photo', name: '📷 カメラ・写真', icon: '📷', desc: '光と影を切り取るアート（創造・社交）', bias: 'creativity' },
+  { id: 'bonsai', name: '🪴 盆栽・園芸', icon: '🪴', desc: '四季の移ろいを鉢の上に表現する風流（創造・幸福）', bias: 'creativity' },
+  { id: 'board', name: '🀄 麻雀・将棋', icon: '🀄', desc: '読みと勝負勘を研ぎ澄ます盤上の勝負（知力・社交）', bias: 'smarts' },
+];
+
 const HOUSES = [
-  { id: 'condo', name: '🏢 中古マンション', price: 1500, happy: 1, rentSave: 30, desc: '家賃が浮き、毎年 幸福+1' },
-  { id: 'house', name: '🏡 庭付き一戸建て', price: 3500, happy: 2, rentSave: 50, desc: '憧れのマイホーム（毎年 幸福+2）' },
-  { id: 'tower', name: '🏙️ 都心タワーマンション', price: 10000, happy: 4, rentSave: 70, desc: '最高の眺望とステータス（毎年 幸福+4・魅力+1）' },
+  { id: 'country', name: '🌾 田舎の古民家・平屋', price: 800, happy: 2, rentSave: 40, icon: '🌾', desc: '自然に囲まれたスローライフ（生活費削減・毎年 幸福+2・体力+1）' },
+  { id: 'condo', name: '🏢 中古マンション', price: 1500, happy: 1, rentSave: 30, icon: '🏢', desc: '家賃が浮き、毎年 幸福+1' },
+  { id: 'house', name: '🏡 庭付き一戸建て', price: 3500, happy: 2, rentSave: 50, icon: '🏡', desc: '憧れのマイホーム（毎年 幸福+2）' },
+  { id: 'tower', name: '🏙️ 都心タワーマンション', price: 10000, happy: 4, rentSave: 70, icon: '🏙️', desc: '最高の眺望とステータス（毎年 幸福+4・社交+1）' },
 ];
 const CARS = [
   { id: 'compact', name: '🚗 コンパクトカー', price: 200, fx: { happy: 5, social: 2 }, desc: '休日のお出かけが快適に（幸福+5・社交+2）' },
@@ -505,6 +514,9 @@ function ensureState(s) {
   if (!s.lastJob) s.lastJob = null;
   if (!s.lastInvestSummary) s.lastInvestSummary = null;
   if (!Array.isArray(s.album)) s.album = [];
+  if (!s.hobby) s.hobby = null;
+  if (typeof s.hobbyLevel !== 'number') s.hobbyLevel = 0;
+  if (typeof s.actedLifestyleYear !== 'number') s.actedLifestyleYear = 0;
   if (!s.club) s.club = null;
   if (!s.hsActivity) s.hsActivity = null;
   // 旧ステータス(health, looks)からの移行
@@ -2631,6 +2643,162 @@ function estateRentIncome() {
   return Math.round(S.assets.estate * rate);
 }
 
+function openLifestyleMenu() {
+  const acted = S.actedLifestyleYear === S.age;
+  const choices = [];
+  const hobbyObj = S.hobby ? HOBBIES.find(h => h.id === S.hobby) : null;
+  const hasPet = !!S.flags.pet;
+  const petName = S.assets.items.includes('dog') ? '愛犬' : (S.flags.petName || '愛猫');
+  const petIcon = S.assets.items.includes('dog') ? '🐕' : '🐈';
+
+  // 1. ペット関連アクション
+  if (!hasPet) {
+    choices.push({
+      label: '🐾 保護犬・保護猫の里親になる（譲渡費 5万円）',
+      sub: '新しい家族を迎える｜生涯の癒やしと活力',
+      disabled: S.money < 5,
+      silent: true,
+      fn() {
+        return {
+          then: {
+            icon: '🐾', title: '里親の決断',
+          text: '保護シェルターにやってきた。\nどの子を新しい家族として迎えますか？',
+          choices: [
+            {
+              label: '🐶 人懐っこい保護犬を迎える',
+              fn() {
+                fx({ money: -5, happy: 10, fitness: 5 });
+                S.flags.pet = true;
+                if (!S.assets.items.includes('dog')) S.assets.items.push('dog');
+                addAlbumSnap({ id: 'pet_welcome', age: S.age, icon: '🐶', title: '新しい家族（愛犬）', desc: '保護犬を迎え入れた！元気いっぱいにしっぽを振って迎えてくれる。', tag: '家族' });
+                playSE('good');
+                return { text: '愛犬が家族の一員になった！毎日の散歩やふれあいで元気をもらえる！', then: openLifestyleMenu() };
+              }
+            },
+            {
+              label: '🐱 おっとりした保護猫を迎える',
+              fn() {
+                fx({ money: -5, happy: 12 });
+                S.flags.pet = true;
+                const cName = pick(CAT_NAMES);
+                S.flags.petName = cName;
+                addAlbumSnap({ id: 'pet_welcome', age: S.age, icon: '🐱', title: '新しい家族（愛猫）', desc: `「${cName}」と名付け、保護猫を家族に迎えた。`, tag: '家族' });
+                playSE('good');
+                return { text: `「${cName}」が家族の一員になった！ゴロゴロと喉を鳴らして甘えてくる。`, then: openLifestyleMenu() };
+              }
+            },
+            { label: '今回は見送る', cancel: true, fn: () => ({ then: openLifestyleMenu() }) }
+          ]
+        } };
+      }
+    });
+  } else {
+    choices.push({
+      label: `${petIcon} ${petName}とふれあう・散歩する（年1回・無料）${acted ? '［今年済］' : ''}`,
+      sub: 'ストレス解消｜幸福↑ 体力↑',
+      disabled: acted,
+      fn() {
+        S.actedLifestyleYear = S.age;
+        if (chance(0.25)) {
+          fx({ happy: 8, fitness: 3, social: 3 });
+          playSE('good');
+          return `${petName}と散歩中、近所のペット仲間と意気投合！楽しい世間話で心が温まった！`;
+        } else if (chance(0.12)) {
+          fx({ happy: 10, money: 5 });
+          playSE('fanfare');
+          return `${petName}が茂みから落とし物の小銭入れ（5万円）を発見！交番でお礼を受け取った！`;
+        }
+        fx({ happy: 6, fitness: 2 });
+        playSE('good');
+        return `${petName}と一緒にのんびり過ごした。温かいぬくもりに日々の疲れが癒やされていく…。`;
+      }
+    });
+  }
+
+  // 2. 趣味・ライフワーク関連
+  if (!hobbyObj) {
+    HOBBIES.forEach(h => {
+      choices.push({
+        label: `${h.name}を始める（初期費用 10万円）`,
+        sub: h.desc,
+        disabled: S.money < 10,
+        confirm: () => `${h.name}を始めますか？\n（初期費用：10万円\n特徴：${h.desc}）`,
+        fn() {
+          S.hobby = h.id;
+          S.hobbyLevel = 1;
+          fx({ money: -10, happy: 6 });
+          playSE('good');
+          addAlbumSnap({ id: 'hobby_start', age: S.age, icon: h.icon, title: `趣味「${h.name}」開始`, desc: `生涯夢中になれるライフワークとして${h.name}を始めた！`, tag: '趣味' });
+          return `【${h.name}】をスタート！道具を揃え、休日の楽しみがグッと増えた！`;
+        }
+      });
+    });
+  } else {
+    const nextLv = (S.hobbyLevel || 1) + 1;
+    const isMax = (S.hobbyLevel || 1) >= 5;
+    choices.push({
+      label: isMax
+        ? `✨ ${hobbyObj.name}（達人の境地・Lv5 MAX）${acted ? '［今年済］' : ''}`
+        : `🎨 ${hobbyObj.name}の腕を磨く（Lv${S.hobbyLevel || 1} → Lv${nextLv}｜費用5万円）${acted ? '［今年済］' : ''}`,
+      sub: isMax ? '生涯のライフワーク｜毎年高い幸福度と精神の充実' : '熟練度UP｜展示会やコンクールで入賞のチャンス',
+      disabled: acted || isMax || S.money < 5,
+      fn() {
+        S.actedLifestyleYear = S.age;
+        S.hobbyLevel = Math.min(5, (S.hobbyLevel || 1) + 1);
+        fx({ money: -5, happy: 8 });
+        const curLv = S.hobbyLevel;
+        if (curLv === 3) {
+          fx({ happy: 10, social: 5 });
+          playSE('fanfare');
+          addAlbumSnap({ id: 'hobby_master', age: S.age, icon: '🏆', title: `${hobbyObj.name}でコンクール入賞`, desc: '長年の熱意が認められ、地域の作品展で見事入賞を果たした！', tag: '栄光' });
+          return `【${hobbyObj.name}】がLv3に到達！作品展・コンクールで入賞を果たし、仲間から一目置かれる存在に！`;
+        } else if (curLv === 5) {
+          fx({ happy: 16, social: 8, creativity: 5 });
+          playSE('fanfare');
+          addAlbumSnap({ id: 'hobby_legend', age: S.age, icon: '👑', title: `${hobbyObj.name}の名人`, desc: '道を極め、専門誌やメディアで特集されるほどの腕前へ登り詰めた！', tag: '栄光' });
+          return `【${hobbyObj.name}】が最高峰のLv5（名人）に到達！専門誌やメディアで特集され、生涯の誇りとなった！`;
+        }
+        playSE('good');
+        return `【${hobbyObj.name}】の腕前がLv${curLv}にアップ！技術と知識が深まり、ますます没頭している！`;
+      }
+    });
+
+    choices.push({
+      label: `🔄 別の新しい趣味に乗り換える（10万円）`,
+      disabled: acted || S.money < 10,
+      silent: true,
+      fn() {
+        return {
+          then: {
+            icon: '🔄', title: '趣味の変更',
+          text: '現在の趣味から、新しいライフワークへ乗り換えますか？',
+          choices: [
+            ...HOBBIES.filter(h => h.id !== S.hobby).map(h => ({
+              label: `${h.name}を始める（10万円）`,
+              fn() {
+                S.hobby = h.id;
+                S.hobbyLevel = 1;
+                fx({ money: -10, happy: 4 });
+                playSE('good');
+                return { text: `新しい趣味として【${h.name}】をスタートした！`, then: openLifestyleMenu() };
+              }
+            })),
+            { label: '今の趣味を続ける', cancel: true, fn: () => ({ then: openLifestyleMenu() }) }
+          ]
+        } };
+      }
+    });
+  }
+
+  choices.push({ label: '閉じる', cancel: true, fn: () => '' });
+
+  return {
+    icon: '🌿', title: '趣味・ペット（ライフスタイル）',
+    text: `日々の暮らしを彩る趣味やペットとのふれあい。\n現在：${hobbyObj ? `${hobbyObj.name}（Lv${S.hobbyLevel || 1}）` : '趣味未設定'} ｜ ペット：${hasPet ? `${petIcon} ${petName}` : 'なし'}`,
+    choices
+  };
+}
+
 function openAssetMenu() {
   const hObj = currentHouseObj();
   const cObj = currentCarObj();
@@ -2644,6 +2812,23 @@ function openAssetMenu() {
       { label: `🏢 収益不動産オーナー（家賃 +${fmtMoney(estateRent)}/年）`, silent: true, fn: () => ({ then: openEstateMenu() }) },
       { label: `🏠 住まいを購入・住み替え（現在：${hObj ? hObj.name : '賃貸'}）`, silent: true, fn: () => ({ then: openHouseMenu() }) },
       { label: '🚗 愛車・ステータス品ショップ', silent: true, fn: () => ({ then: openLuxuryMenu() }) },
+      {
+        label: '🎰 海外カジノ・VIPルームの大勝負（1回 500万円）',
+        sub: '勝率48%｜勝利で純利+500万円',
+        disabled: S.money < 500,
+        confirm: '本当に500万円を賭けてカジノの大勝負に挑みますか？（負けると500万円を一瞬で失います）',
+        fn() {
+          if (chance(0.48 + (hasTrait('lucky') ? 0.08 : 0))) {
+            fx({ money: 500, happy: 18 });
+            playSE('fanfare');
+            addAlbumSnap({ id: 'casino_win', age: S.age, icon: '🎰', title: 'カジノVIPで大勝利！', desc: '一世一代の大勝負を制し、テーブルのチップを総ざらいした！', tag: '勝負' });
+            return '【大勝利！】ディーラーの手を完全に読み切り、500万円の純利益を獲得！会場に歓声が響き渡った！';
+          }
+          fx({ money: -500, happy: -14 });
+          playSE('bad');
+          return '【敗北…】チップはすべてハウスに回収された…。冷や汗を流しながらカジノを後にした…。';
+        }
+      },
       { label: '閉じる', cancel: true, fn: () => '' },
     ]
   };
@@ -4565,6 +4750,10 @@ function yearEnd() {
     const depKids = S.kids.filter(k => a - k.birth < 22).length;
     // 基本生活費（年齢・家族構成）
     cost = 100 + (a >= 18 ? 40 : 0) + (S.married ? 60 : 0) + depKids * 50;
+    if (hObj && hObj.id === 'country') {
+      cost = Math.round(cost * 0.7); // 田舎スローライフ生活費30%カット
+      fx({ fitness: 1, happy: 2 });
+    }
     // 老後（70代・80代）の医療費・健康ケア費用の増加
     if (a >= 70) {
       const oldAgeMedical = (a >= 80 ? 80 : 40) + (S.fitness < 40 ? 50 : 0);
@@ -5004,11 +5193,20 @@ function renderLifeMenu() {
   }
   box.innerHTML = '';
 
+  const hobbyObj = S.hobby ? HOBBIES.find(h => h.id === S.hobby) : null;
+  const petText = S.flags.pet ? (S.assets.items.includes('dog') ? '愛犬' : (S.flags.petName || '愛猫')) : 'なし';
+  const hobbySub = hobbyObj ? `${hobbyObj.name.split(' ')[1]} Lv${S.hobbyLevel || 1} ｜ ペット:${petText}` : `趣味・ペット（${petText}）`;
+
   const menus = [
     {
       icon: '💕', label: '恋愛・家族',
       sub: S.married ? `配偶者 💖${S.partnerLove}%・子${S.kids.length}人` : S.partner ? `恋人 💖${S.partnerLove}%` : '出会い・デート・結婚',
       fn: () => openLoveMenu(),
+    },
+    {
+      icon: '🌿', label: '趣味・ペット',
+      sub: hobbySub,
+      fn: () => openLifestyleMenu(),
     },
   ];
   if (S.age >= 18) {
