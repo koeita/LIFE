@@ -417,6 +417,8 @@ function ensureState(s) {
     s.traits = shuffle(TRAITS.slice(0, 8)).slice(0, 2).map(t => t.id);
   }
   if (!s.lesson) s.lesson = null;
+  if (!s.lastJob) s.lastJob = null;
+  if (!s.lastInvestSummary) s.lastInvestSummary = null;
   if (!s.club) s.club = null;
   if (!s.hsActivity) s.hsActivity = null;
   // 旧ステータス(health, looks)からの移行
@@ -602,6 +604,7 @@ const chipsHTML = d => d.map(x =>
 function setJob(j) {
   S.job = { name: j.name, base: j.base, level: 0, corp: !!j.corp, icon: j.icon };
   S.retired = false;
+  S.lastJob = { name: j.name, icon: j.icon, level: 0 };
   recordMetaTraitAndJob();
 }
 // 公的年金計算（65歳以降、生涯支給）
@@ -623,8 +626,13 @@ const salary = () => {
   if (S.advisor) raw *= 0.50;
   return Math.round(raw);
 };
-const jobTitle = () => !S.job ? (S.retired ? '退職済み' : (S.student ? '学生' : '無職'))
-  : (S.job.corp && S.job.level > 0 ? `${S.job.name}（${LEVELS[S.job.level]}）` : S.job.name);
+const jobTitle = () => {
+  if (!S.job) {
+    if (S.retired) return S.lastJob ? `元・${S.lastJob.name}` : '退職済み（シニア）';
+    return S.student ? '学生' : '無職';
+  }
+  return S.job.corp && S.job.level > 0 ? `${S.job.name}（${LEVELS[S.job.level]}）` : S.job.name;
+};
 
 function stage() {
   const a = S.age;
@@ -673,7 +681,7 @@ function currentOccupationBadge() {
     if (S.uni) return `🎓 大学生（${S.uni}）`;
     return S.uniRank >= 2 ? '🎓 大学生（難関大）' : '🎓 大学生';
   }
-  if (S.retired) return '🕊️ 年金生活';
+  if (S.retired) return S.lastJob ? `🕊️ 年金生活（元・${S.lastJob.name}）` : '🕊️ 年金生活';
   if (S.job) {
     const icon = S.job.icon || '💼';
     return `${icon} ${jobTitle()}`;
@@ -1781,6 +1789,7 @@ function milestone(a) {
       if (S.flags.scouted_pro) {
         choices.unshift({
           label: '🏅 【ドラフト1位指名】プロ球団・クラブへ入団！',
+          special: true,
           sub: '契約金5000万円｜初年度年俸1200万円｜プロスポーツ選手',
           fn() {
             S.student = false; S.edu = 2;
@@ -1794,6 +1803,7 @@ function milestone(a) {
       } else {
         choices.unshift({
           label: '🏅 プロ入りテスト（トライアウト）に挑戦する',
+          special: true,
           sub: '幼少期からの経験で合格率UP｜プロスポーツ選手',
           fn() {
             S.student = false; S.edu = 2;
@@ -1819,6 +1829,7 @@ function milestone(a) {
       if (S.flags.major_debut_offer) {
         choices.unshift({
           label: '🎸 【メジャーデビュー決定】プロミュージシャンとして契約！',
+          special: true,
           sub: '契約金1500万円｜初年度年収600万円｜大型新人アーティスト',
           fn() {
             S.student = false; S.edu = 2;
@@ -1832,6 +1843,7 @@ function milestone(a) {
       } else {
         choices.unshift({
           label: '🎸 プロミュージシャンを目指して音楽の世界へ！',
+          special: true,
           sub: 'オーディション挑戦 / 下積みインディーズ',
           fn() {
             S.student = false; S.edu = 2;
@@ -1852,20 +1864,70 @@ function milestone(a) {
     }
 
     // 特別進路3: 若手IT起業家
-    const canTryTech = !isRonin && (S.flags.tech_geek || hasTrait('logical_mind') || S.smarts >= 75);
-    if (canTryTech && chance(0.5)) {
-      choices.push({
-        label: '🚀 自作サービスを元に高校発ITベンチャーを起業する！',
-        sub: '起業家として社会へ｜知力と技術で勝負',
-        fn() {
-          S.student = false; S.edu = 2;
-          setJob({ name: '起業家', base: 500, icon: '🚀' });
-          S.flags.founder = true;
-          fx({ happy: 10, smarts: 5, money: 500 });
-          playSE('fanfare');
-          return 'VCからの初期出資を取り付け、高校発ベンチャーを創業！若手CEOとして名乗りを上げた！';
-        }
-      });
+    const canTryTech = !isRonin && (S.flags.tech_star || S.flags.tech_geek || S.club === 'tech' || hasTrait('logical_mind') || S.smarts >= 75);
+    if (canTryTech) {
+      if (S.flags.tech_star) {
+        choices.unshift({
+          label: '🚀 【VC出資確約】大型シード資金を得てITベンチャー起業！',
+          sub: '出資資金3000万円｜初年度年収800万円｜若手注目起業家',
+          special: true,
+          fn() {
+            S.student = false; S.edu = 2;
+            setJob({ name: '起業家', base: 800, icon: '🚀' });
+            S.flags.founder = true;
+            fx({ money: 3000, happy: 15, smarts: 8 });
+            playSE('fanfare');
+            return '著名VCから出資資金3000万円を調達！若きカリスマCEOとして業界に旋風を巻き起こす！';
+          }
+        });
+      } else if (chance(0.65)) {
+        choices.unshift({
+          label: '🚀 自作サービスを元に高校発ITベンチャーを起業する！',
+          sub: '起業家として社会へ｜知力と技術で勝負',
+          special: true,
+          fn() {
+            S.student = false; S.edu = 2;
+            setJob({ name: '起業家', base: 500, icon: '🚀' });
+            S.flags.founder = true;
+            fx({ happy: 10, smarts: 5, money: 500 });
+            playSE('fanfare');
+            return 'VCからの初期出資を取り付け、高校発ベンチャーを創業！若手CEOとして名乗りを上げた！';
+          }
+        });
+      }
+    }
+
+    // 特別進路4: プロイラストレーター・デザイナー
+    const canTryArt = !isRonin && (S.flags.art_star || S.club === 'art' || hasTrait('artist') || S.creativity >= 72);
+    if (canTryArt) {
+      if (S.flags.art_star) {
+        choices.unshift({
+          label: '🎨 【大型専属契約】プロのクリエイター・デザイナーとして独立！',
+          sub: '専属契約金800万円｜初年度年収500万円｜気鋭のアーティスト',
+          special: true,
+          fn() {
+            S.student = false; S.edu = 2;
+            setJob({ name: 'デザイナー', base: 500, icon: '🎨' });
+            S.flags.star = true;
+            fx({ money: 800, happy: 14, creativity: 8, social: 6 });
+            playSE('fanfare');
+            return '大手デザイン事務所と専属契約！契約金800万円を手に、若き人気クリエイターとして始動！';
+          }
+        });
+      } else if (chance(0.6)) {
+        choices.unshift({
+          label: '🎨 フリーランスのイラストレーター・作家として活動開始！',
+          sub: '創作の世界へ｜独創性とセンスで勝負',
+          special: true,
+          fn() {
+            S.student = false; S.edu = 2;
+            setJob({ name: '小説家・漫画家', base: 350, icon: '🖋️' });
+            fx({ happy: 8, creativity: 5, money: 200 });
+            playSE('fanfare');
+            return '自作作品の連載・制作契約を獲得！プロの創作作家としての一歩を踏み出した！';
+          }
+        });
+      }
     }
 
     choices.push({
@@ -1884,14 +1946,15 @@ function milestone(a) {
     };
   };
 
-  // 16歳（高2）：全国大会・フェス・スカウトの視線
-  if (a === 16 && S.student && (S.flags.athlete_star || S.flags.music_talent || S.club === 'sports' || S.club === 'music')) {
+  // 16歳（高2）：全国大会・フェス・コンペ・スカウトの視線
+  if (a === 16 && S.student && (S.flags.athlete_star || S.flags.music_talent || S.flags.tech_geek || S.flags.art_star || S.club === 'sports' || S.club === 'music' || S.club === 'tech' || S.club === 'art')) {
     if (S.flags.athlete_star || S.club === 'sports') {
       return {
         icon: '🏟️', title: 'インターハイの激闘とドラフト候補選出', badge: '高校2年生',
         text: '全国大会のスタンドには、プロ球団やJリーグのスカウト陣の姿が。',
         choices: [{
           label: '全国の舞台で全てを出し切る！',
+          special: true,
           fn() {
             const skillScore = (S.fitness || 0) + (S.sportSkill ? S.sportSkill * 4 : 0);
             if (skillScore >= 75 || hasTrait('athletic_sense') || hasTrait('iron')) {
@@ -1911,6 +1974,7 @@ function milestone(a) {
         text: '応募総数3000組を超えるティーンズフェスの決勝ステージ！',
         choices: [{
           label: '全力のシャウトと演奏を叩きつける！',
+          special: true,
           fn() {
             const musicScore = (S.creativity || 0) + (S.musicSkill ? S.musicSkill * 4 : 0);
             if (musicScore >= 75 || hasTrait('absolute_pitch') || hasTrait('artist')) {
@@ -1921,6 +1985,48 @@ function milestone(a) {
             }
             fx({ creativity: 3, happy: 5 });
             return '準グランプリを獲得！インディーズレーベルから声がかかり、注目を集めた！';
+          }
+        }]
+      };
+    } else if (S.flags.tech_geek || S.club === 'tech') {
+      return {
+        icon: '💻', title: '全国高校生プログラミングコンテスト ＆ 自作アプリのバズ', badge: '高校2年生',
+        text: '独自に開発したWEBサービス・自作アプリを全国コンテストに出品した！',
+        choices: [{
+          label: '自作プロダクトの熱烈プレゼンに挑む！',
+          special: true,
+          fn() {
+            const techScore = (S.smarts || 0) + (S.creativity || 0) / 2 + (S.techSkill ? S.techSkill * 4 : 0);
+            if (techScore >= 75 || hasTrait('logical_mind') || hasTrait('genius')) {
+              S.flags.tech_star = true;
+              S.flags.tech_geek = true;
+              fx({ smarts: 5, creativity: 3, happy: 10, money: 50 });
+              playSE('fanfare');
+              return '最優秀賞グランプリを受賞！アプリは10万DLを記録し、著名VCやIT企業から出資と業務提携のオファーが殺到した！';
+            }
+            S.flags.tech_geek = true;
+            fx({ smarts: 3, creativity: 2, happy: 5 });
+            return '入賞を果たした！全国の天才高校生エンジニアたちと繋がり、確かな自信を得た！';
+          }
+        }]
+      };
+    } else if (S.flags.art_star || S.club === 'art') {
+      return {
+        icon: '🎨', title: '高校生国際美術展 ＆ 全国デザインコンペ', badge: '高校2年生',
+        text: '半年かけて描き上げた大作油絵とグラフィックを全国展覧会に出展した！',
+        choices: [{
+          label: '魂を込めた作品で勝負する！',
+          special: true,
+          fn() {
+            const artScore = (S.creativity || 0) + (S.artSkill ? S.artSkill * 4 : 0);
+            if (artScore >= 75 || hasTrait('artist') || hasTrait('charisma')) {
+              S.flags.art_star = true;
+              fx({ creativity: 6, happy: 10, social: 5, looks: 2 });
+              playSE('fanfare');
+              return '文部科学大臣賞を受賞！圧倒的な表現力と独創性が絶賛され、若手クリエイターとしてメディアに特集された！';
+            }
+            fx({ creativity: 4, happy: 5 });
+            return '秀作賞に入選！全国の一流の作品群に刺激を受け、表現者としての視野が大きく広がった！';
           }
         }]
       };
@@ -2137,6 +2243,7 @@ function milestone(a) {
           fn() {
             let t = 'これからは公的年金を受給しながら、自分のペースで生きていく。';
             if (S.job) {
+              S.lastJob = { name: S.job.name, icon: S.job.icon, level: S.job.level || 0 };
               const b = Math.round(salary() * 1.8);
               fx({ money: b });
               t = `長年の勤務、本当にお疲れさまでした！退職金 ${fmtMoney(b)} を受け取った！`;
@@ -4310,6 +4417,17 @@ function yearEnd() {
     stockGain = rawGain;
     S.assets.stock = Math.max(0, S.assets.stock + stockGain);
   }
+  const netEstate = S.assets.estate > 0 ? (estateRent - estateMaintenance) : 0;
+  if (S.assets.stock > 0 || S.assets.estate > 0) {
+    S.lastInvestSummary = {
+      stockGain,
+      estateRent: netEstate,
+      total: stockGain + netEstate,
+      year: S.age,
+    };
+  } else {
+    S.lastInvestSummary = null;
+  }
 
   // 超富裕層（金融資産10億円超）に対する資産管理費・富裕税（年1.2%）
   let wealthTax = 0;
@@ -4697,6 +4815,29 @@ function renderActions(force = false) {
 
   $('#action-heading').textContent = S.age < 3 ? `${S.age}歳 ― すくすく成長中` : `${S.age}歳の1年をどう過ごす？`;
 
+  const investBanner = $('#invest-summary-banner');
+  if (investBanner) {
+    if (S.lastInvestSummary && S.lastInvestSummary.year === S.age - 1) {
+      const isum = S.lastInvestSummary;
+      const totalSign = isum.total > 0 ? '+' : '';
+      const totalCls = isum.total > 0 ? 'isb-pos' : isum.total < 0 ? 'isb-neg' : 'isb-zero';
+      const stockSign = isum.stockGain > 0 ? '+' : '';
+      const stockText = isum.stockGain !== 0 ? `株式 ${stockSign}${fmtMoney(isum.stockGain)}` : '';
+      const estateSign = isum.estateRent > 0 ? '+' : '';
+      const estateText = isum.estateRent !== 0 ? `不動産 ${estateSign}${fmtMoney(isum.estateRent)}` : '';
+      const details = [stockText, estateText].filter(Boolean).join(' ｜ ');
+
+      investBanner.hidden = false;
+      investBanner.innerHTML = `
+        <span class="isb-tag">📈 運用成果</span>
+        <span class="isb-total ${totalCls}">年間損益: <b>${totalSign}${fmtMoney(isum.total)}</b></span>
+        ${details ? `<span class="isb-detail">（${details}）</span>` : ''}
+      `;
+    } else {
+      investBanner.hidden = true;
+    }
+  }
+
   // ターン（年齢・行動一覧）が変わっていない場合は、DOM再生成によるチラつき・再アニメーションを防ぎdisabled状態のみ更新
   if (!force && lastRenderedActionKey === actKey && box.children.length === acts.length) {
     [...box.children].forEach(b => { b.disabled = busy; });
@@ -4895,11 +5036,12 @@ function formatChoiceSub(text) {
 }
 
 function formatChoiceLabel(c) {
+  const specialBadge = c.special ? '<span class="choice-special-badge">🌟 特別進路</span> ' : '';
   const rawLabel = typeof c.label === 'function' ? c.label() : c.label;
   const subText = c.sub || '';
 
   if (subText) {
-    return `<span class="choice-main">${escapeHtml(rawLabel)}</span><span class="choice-sub">${formatChoiceSub(subText)}</span>`;
+    return `<span class="choice-main">${specialBadge}${escapeHtml(rawLabel)}</span><span class="choice-sub">${formatChoiceSub(subText)}</span>`;
   }
 
   // 「―」で区切られた説明文がある場合
@@ -4980,7 +5122,7 @@ function runEvent(ev) {
     visibleChoices.forEach((c, i) => {
       const b = document.createElement('button');
       const isSinglePrimary = visibleChoices.length === 1;
-      b.className = 'choice' + (isSinglePrimary ? ' primary' : c.cancel ? ' cancel' : c.dangerFill ? ' danger-fill' : c.danger ? ' danger' : '') + (c.className ? ' ' + c.className : '');
+      b.className = 'choice' + (isSinglePrimary ? ' primary' : c.cancel ? ' cancel' : c.dangerFill ? ' danger-fill' : c.danger ? ' danger' : '') + (c.special ? ' choice-special' : '') + (c.className ? ' ' + c.className : '');
       b.id = `choice-${i + 1}`;
       b.disabled = typeof c.disabled === 'function' ? !!c.disabled() : !!c.disabled;
       if (c.html) {
@@ -5284,8 +5426,8 @@ const ALL_ACHIEVEMENTS = [
   { icon: '🛸', name: '宇宙旅行者', check: (s) => !!s.flags.space },
   { icon: '🤞', name: '親友', check: (s) => !!s.flags.bestfriend },
   { icon: '🎰', name: '強運', check: (s) => !!s.flags.lottery },
-  { icon: '🧬', name: '受け継がれる意志', check: (s) => (s.gen || 1) >= 2 },
-  { icon: '👑', name: '名門一族', check: (s) => (s.gen || 1) >= 3 },
+  { icon: '💼', name: '天職の極み', check: (s) => (s.job && s.job.level >= 3) || !!(s.flags && (s.flags.executive || s.flags.pro || s.flags.star)) },
+  { icon: '🌟', name: '多角経営の覇者', check: (s, w, f) => (!!s.sideJob && w >= 2500) || (s.assets && s.assets.estate >= 3000) },
   { icon: '😊', name: '幸せな人生', check: (s, w, f, avg) => avg >= 70 },
 ];
 
@@ -5340,7 +5482,7 @@ function evaluate() {
   else if (S.flags.star) title = '時代を彩ったスター';
   else if (S.flags.founder) title = '一代で財を成した起業家';
   else if (S.flags.pro) title = '夢を叶えたアスリート';
-  else if ((S.gen || 1) >= 3 && wealth >= 5000) title = '名門一族の当主';
+  else if (wealth >= 5000 && (S.flags.founder || S.sideJob)) title = '時代の寵児';
   else if (wealth >= 10000) title = '大富豪';
   else if (finAssets >= 5000) title = '伝説の投資家';
   else if (S.age >= 100) title = '百年を生きた賢者';
@@ -5401,7 +5543,7 @@ function showEnd() {
   const finalEdu = formatEduString();
   const stats = [
     ['平均幸福度', e.avg], ['最終総資産', fmtMoney(e.wealth)], ['学歴', finalEdu],
-    ['最終職業', S.retired ? '退職' : jobTitle()], ['家族', `${S.married ? '配偶者あり' : '独身'}・子${S.kids.length}人`], ['実績', `${e.got} / ${e.ach.length}`],
+    ['最終職業', jobTitle()], ['家族', `${S.married ? '配偶者あり' : '独身'}・子${S.kids.length}人`], ['実績', `${e.got} / ${e.ach.length}`],
   ];
   $('#end-stats').innerHTML = stats.map(([a, b]) => `<div class="end-stat"><small>${a}</small><b>${b}</b></div>`).join('');
   lastShare = buildShareData(e, finalEdu);
@@ -5410,7 +5552,7 @@ function showEnd() {
   $('#end-timeline').innerHTML = S.log.filter(l => l.major).map(l => `<li><span class="t-age">${l.age}歳</span><span>${l.icon} ${l.text}</span></li>`).join('');
 
   // コレクション＆殿堂入り記録の保存
-  const finalJob = S.retired ? '退職' : jobTitle();
+  const finalJob = jobTitle();
   const finalFamily = `${S.married ? '配偶者あり' : '独身'}・子${S.kids.length}人`;
   const finalAchText = `${e.got} / ${e.ach.length}`;
   const hofEntry = {
@@ -5424,6 +5566,7 @@ function showEnd() {
   meta.titles[e.title] = true;
   (S.traits || []).forEach(t => { meta.traits[t] = true; });
   if (S.job && S.job.name) meta.jobs[S.job.name] = true;
+  if (S.lastJob && S.lastJob.name) meta.jobs[S.lastJob.name] = true;
   meta.totalLives = (meta.totalLives || 0) + 1;
   meta.hof.push(hofEntry);
   meta.hof.sort((a, b) => b.score - a.score);
@@ -5444,7 +5587,7 @@ let lastShare = null;
 
 function buildShareData(e, finalEdu = null) {
   const nameLabel = S.name;
-  const job = S.retired ? '退職' : jobTitle();
+  const job = jobTitle();
   const family = `${S.married ? '配偶者あり' : '独身'}・子${S.kids.length}人`;
   const eduStr = finalEdu || formatEduString();
   const stats = [
