@@ -592,9 +592,23 @@ function setJob(j) {
   S.retired = false;
   recordMetaTraitAndJob();
 }
+// 公的年金計算（65歳以降、生涯支給）
+const pension = () => {
+  if (!S || S.age < 65) return 0;
+  let p = 75; // 国民基礎年金（約75万円/年）
+  if (S.edu >= 4) p += 35; // 大卒厚生年金加算
+  if (S.flags && (S.flags.executive || S.flags.ceo)) p += 50; // 役員・高所得者加算
+  else if (S.job) p += 25;
+  return p; // 約100万〜185万円/年
+};
+
 const salary = () => {
   if (!S.job) return 0;
-  const raw = S.job.base * (1 + S.job.level * 0.3) * (hasTrait('merchant') ? 1.15 : 1);
+  let raw = S.job.base * (1 + S.job.level * 0.3) * (hasTrait('merchant') ? 1.15 : 1);
+  // 役職定年（60歳以上の再雇用は給与65%）
+  if (S.reemployed) raw *= 0.65;
+  // 顧問・名誉職への移行（給与50%）
+  if (S.advisor) raw *= 0.50;
   return Math.round(raw);
 };
 const jobTitle = () => !S.job ? (S.retired ? '退職済み' : (S.student ? '学生' : '無職'))
@@ -811,16 +825,17 @@ const ACTIONS = {
     { icon: '📚', label: '資格の勉強', desc: '知力↑↑', cond: () => !S.ronin, fn() { fx({ smarts: r(3, 5), money: -10 }); return '再起を目指して勉強した。'; } },
   ],
   senior: [
-    { icon: '🎨', label: '趣味・創作を楽しむ', desc: '幸福↑↑ 創造↑', fn() { fx({ happy: r(3, 6) + (hasTrait('artist') ? 2 : 0), creativity: r(1, 3) }); return '趣味に没頭する充実した日々。'; } },
-    { icon: '🚶', label: '散歩をする', desc: '体力↑', fn() { fx({ fitness: r(1, 4) }); return '毎朝の散歩を日課にした。'; } },
+    { icon: '📖', label: '読書・脳トレに励む', desc: '知力↑↑ 幸福↑', fn() { fx({ smarts: r(3, 6), happy: r(2, 4) }); return '名著を読み耽り、脳トレで知的好奇心を刺激した。頭がスッキリ冴えわたる！'; } },
+    { icon: '🌿', label: '毎朝の体操・健康づくり', desc: '体力↑↑ 幸福↑', fn() { fx({ fitness: r(3, 6), happy: r(2, 4) }); return 'ラジオ体操とストレッチで足腰を鍛えた。まだまだ現役の元気さだ！'; } },
+    { icon: '🎨', label: '趣味・創作を楽しむ', desc: '幸福↑↑ 創造↑', fn() { fx({ happy: r(3, 6) + (hasTrait('artist') ? 2 : 0), creativity: r(2, 4) }); return '趣味に没頭する充実した日々。豊かな感性が研ぎ澄まされる。'; } },
     {
-      icon: '👨‍👩‍👧', label: '家族や仲間と過ごす', desc: '幸福↑↑ 社交↑', fn() {
+      icon: '☕', label: '地域交流・ボランティア', desc: '社交↑↑ 幸福↑', fn() {
         const fam = (S.married ? 1 : 0) + S.kids.length;
-        fx({ happy: r(2, 4) + Math.min(fam, 3), social: r(1, 3) });
-        return fam ? '家族や古い友人たちに囲まれて穏やかに過ごした。' : '地域のサークルで語らった。';
+        fx({ happy: r(3, 6), social: r(3, 5) });
+        return fam ? '家族や地域の仲間と語らい、温かい絆を感じた。' : '地域のボランティア活動で頼りにされ、生きがいを感じた。';
       }
     },
-    { icon: '🧳', label: '旅行に出かける', desc: '幸福↑↑↑ お金↓', fn() { fx({ money: -r(50, 120), happy: r(6, 10) }); return '憧れの地へ旅に出た。'; } },
+    { icon: '🧳', label: 'のんびり温泉・旅行', desc: '幸福↑↑↑ お金↓', fn() { fx({ money: -r(40, 90), happy: r(7, 12) }); return '名湯に浸かり、これまでの豊かな人生を噛みしめた。'; } },
   ],
 };
 
@@ -1377,20 +1392,122 @@ function milestone(a) {
     icon: '🏟️', title: '現役引退', text: '体力の限界を感じ、引退を決意した。',
     choices: [{ label: '第二のキャリアへ', fn() { S.job = null; fx({ money: 500, happy: -3 }); return '盛大な引退セレモニーが開かれた。'; } }]
   };
-  if (a === 59) return {
-    icon: '🎴', title: '還暦', text: '60歳。赤いちゃんちゃんこで還暦を祝った。',
-    choices: [{ label: 'まだまだこれから', fn() { fx({ happy: 3 }); return ''; } }]
-  };
-  if (a === 64 && !S.retired) return {
-    icon: '💐', title: '定年退職', text: S.job ? `長年続けてきた${S.job.name}の仕事に別れを告げる日がきた。` : '65歳。年金生活が始まる。',
-    choices: [{
-      label: '第二の人生へ', fn() {
-        let t = '年金生活が始まった。';
-        if (S.job) { const b = Math.round(salary() * 1.5); fx({ money: b }); t = `退職金${fmtMoney(b)}を受け取った。お疲れさまでした！`; }
-        S.job = null; S.retired = true; fx({ happy: 5 }); return t;
-      }
-    }]
-  };
+  if (a === 59) {
+    // 60歳：還暦と役職定年・キャリア選択
+    const isLeader = S.flags.ceo || S.flags.founder || S.flags.executive || S.flags.politician || (S.job && ['医師', '弁護士', '大学教授'].includes(S.job.name));
+    if (isLeader) {
+      return {
+        icon: '🎴', title: '還暦 — 指導者としての決断', badge: '60歳',
+        text: '60歳の還暦を迎えた。組織のトップ・第一線として、今後の身の振り方を決める時がきた。',
+        choices: [
+          {
+            label: '🏛️ 生涯現役！トップとして陣頭指揮を執る',
+            sub: '給与100%維持｜毎年体力に負荷',
+            fn() {
+              fx({ happy: 4 });
+              return '「引退などまだ早い！」生涯現役を宣言し、力強く組織を牽引し続ける！';
+            }
+          },
+          {
+            label: '🤝 後進に道を譲り、名誉会長・顧問へ就任',
+            sub: '給与50%｜自由な時間が増加｜幸福↑↑',
+            fn() {
+              S.advisor = true;
+              fx({ happy: 8 });
+              return '後進へバトンタッチし、最高顧問として穏やかに見守る立場へ就任した。';
+            }
+          },
+          {
+            label: '💐 ここで完全引退！悠々自適の余生へ',
+            sub: '多額の退職慰労金｜シニア生活へ',
+            fn() {
+              const b = Math.round(salary() * 2.5);
+              fx({ money: b, happy: 10 });
+              S.job = null; S.retired = true;
+              return `第一線を退き完全リタイア！退職慰労金 ${fmtMoney(b)} を受け取った！`;
+            }
+          }
+        ]
+      };
+    } else if (S.job) {
+      return {
+        icon: '🎴', title: '還暦 — 役職定年とこれからの働き方', badge: '60歳',
+        text: '60歳の節目。一般企業では役職定年の時期を迎え、これからの働き方を選択できる。',
+        choices: [
+          {
+            label: '💼 再雇用制度で65歳まで働く',
+            sub: '給与65%で勤務継続｜生活基盤を維持',
+            fn() {
+              S.reemployed = true;
+              fx({ happy: 2 });
+              return 'シニア社員として再雇用契約を締結。65歳の完全定年までマイペースに働く！';
+            }
+          },
+          {
+            label: '💐 早期定年退職を選ぶ',
+            sub: '退職金を受け取り、ゆとりある余生へ',
+            fn() {
+              const b = Math.round(salary() * 1.5);
+              fx({ money: b, happy: 6 });
+              S.job = null; S.retired = true;
+              return `早期定年退職を決意！退職金 ${fmtMoney(b)} を受け取り、新たな人生へ！`;
+            }
+          }
+        ]
+      };
+    } else {
+      return {
+        icon: '🎴', title: '還暦', badge: '60歳',
+        text: '60歳。人生の大きな節目。赤いちゃんちゃんこで家族や仲間に祝ってもらった！',
+        choices: [{ label: '人生まだまだこれから！', fn() { fx({ happy: 5 }); return '豊かなセカンドライフを歩んでいこう。'; } }]
+      };
+    }
+  }
+
+  if (a === 64 && !S.retired) {
+    const isLeader = S.flags.ceo || S.flags.founder || S.flags.politician || (S.job && ['医師', '弁護士'].includes(S.job.name));
+    if (isLeader) {
+      return {
+        icon: '🏅', title: '65歳 — 名誉の節目と年金開始', badge: '65歳',
+        text: '65歳を迎えた。公的年金の受給資格を得たが、指導者としてどう進むか？',
+        choices: [
+          {
+            label: '🏛️ まだまだ現役続行！',
+            sub: '給与＋公的年金を両方受給',
+            fn() { fx({ happy: 3 }); return '生涯現役の気概を保ちつつ、年金受給も開始！'; }
+          },
+          {
+            label: '💐 勇退して顧問・名誉職へ',
+            sub: '退職慰労金を受け取り、年金生活へ',
+            fn() {
+              const b = Math.round(salary() * 2);
+              fx({ money: b, happy: 8 });
+              S.job = null; S.retired = true;
+              return `名誉の勇退！退職慰労金 ${fmtMoney(b)} を受け取り、悠々自適の生活へ。`;
+            }
+          }
+        ]
+      };
+    } else {
+      return {
+        icon: '💐', title: '満期定年退職 ＆ 年金受給開始', badge: '65歳',
+        text: S.job ? `65歳。長年勤め上げた${S.job.name}の職を満期定年で退職する日がやってきた。` : '65歳。公的年金の受給が本格スタートする。',
+        choices: [{
+          label: '第二の人生へ乾杯！',
+          fn() {
+            let t = 'これからは公的年金を受給しながら、自分のペースで生きていく。';
+            if (S.job) {
+              const b = Math.round(salary() * 1.8);
+              fx({ money: b });
+              t = `長年の勤務、本当にお疲れさまでした！退職金 ${fmtMoney(b)} を受け取った！`;
+            }
+            S.job = null; S.retired = true; fx({ happy: 8 });
+            return t;
+          }
+        }]
+      };
+    }
+  }
   if (a === 99) return {
     icon: '🎂', title: '百寿', text: 'ついに100歳！市長から祝い状が届いた。',
     choices: [{ label: 'ありがたい', fn() { fx({ happy: 10 }); return ''; } }]
@@ -3513,29 +3630,52 @@ function yearEnd() {
   else if (rawJobInc > 200) taxRate = 0.12;
   const jobInc = Math.round(rawJobInc * (1 - taxRate));
 
-  // 不動産の維持・修繕イベント判定（年5%の確率で保有額の2%〜4%の修繕費）
+  // 不動産の維持・修繕イベント判定
   let estateMaintenance = 0;
   if (S.assets.estate > 0 && chance(0.08)) {
     estateMaintenance = Math.round(S.assets.estate * (r(2, 4) / 100));
   }
 
-  // 株式市場の変動（好況・通常・暴落のリアルな波）
+  // 株式投資の変動（資産規模に応じた現実的リターン＆金融所得課税）
   let stockGain = 0;
   if (S.assets.stock > 0) {
     let rate = 0;
-    const isCrash = chance(0.07); // 7%の確率で暴落（リーマン級）
-    const isBoom = chance(0.12);  // 12%の確率で好況ラリー
+    const isCrash = chance(0.07);
+    const isBoom = chance(0.12);
     if (isCrash) {
-      rate = -r(15, 32); // -15%〜-32%の暴落
+      rate = -r(14, 28);
       if (hasTrait('lucky')) rate = Math.round(rate * 0.6);
-      if (S.mbti && ['INTJ', 'ISTJ'].includes(S.mbti)) rate = Math.round(rate * 0.7); // 冷静な損切り
+      if (S.mbti && ['INTJ', 'ISTJ'].includes(S.mbti)) rate = Math.round(rate * 0.7);
     } else if (isBoom) {
-      rate = r(12, 28) + (hasTrait('lucky') ? 5 : 0);
+      rate = r(10, 22) + (hasTrait('lucky') ? 4 : 0);
     } else {
-      rate = r(-10, 14) + Math.floor(S.smarts / 40) + (hasTrait('merchant') ? 2 : 0);
+      rate = r(-8, 12) + Math.floor(S.smarts / 45) + (hasTrait('merchant') ? 2 : 0);
     }
-    stockGain = Math.round(S.assets.stock * (rate / 100));
+    // 資産が1億円（10000万）を超える巨大ファンドは市場流動性によりリターンが安定収束（インフレ抑制）
+    if (S.assets.stock > 10000) {
+      rate = Math.round(rate * 0.65);
+    }
+    let rawGain = Math.round(S.assets.stock * (rate / 100));
+    // プラス益には金融所得課税20%が適用
+    if (rawGain > 0) {
+      rawGain = Math.round(rawGain * 0.80);
+    }
+    stockGain = rawGain;
     S.assets.stock = Math.max(0, S.assets.stock + stockGain);
+  }
+
+  // 超富裕層（金融資産10億円超）に対する資産管理費・富裕税（年1.2%）
+  let wealthTax = 0;
+  const totalFin = S.assets.stock + S.assets.estate;
+  if (totalFin > 100000) {
+    wealthTax = Math.round(totalFin * 0.012);
+  }
+
+  // 借金の利息負担（年利14%）
+  let debtInterest = 0;
+  if (S.money < 0) {
+    debtInterest = Math.max(5, Math.round(Math.abs(S.money) * 0.14));
+    S.money -= debtInterest;
   }
 
   const hObj = currentHouseObj();
@@ -3553,8 +3693,9 @@ function yearEnd() {
     cost += estateMaintenance;
   }
 
-  const inc = jobInc + partnerInc + sideInc + estateInc + filialInc;
-  S.money += inc - cost;
+  const pensionInc = pension();
+  const inc = jobInc + partnerInc + sideInc + estateInc + filialInc + pensionInc;
+  S.money += inc - cost - wealthTax;
 
   // 住まい・別荘・パートナーによる年間ボーナス
   if (hObj) fx({ happy: hObj.happy, social: hObj.id === 'tower' ? 1 : 0 });
@@ -3569,9 +3710,19 @@ function yearEnd() {
     const ageDmg = a >= 80 ? 3 : a >= 60 ? 2 : 1;
     S.fitness = clamp(S.fitness - (hasTrait('iron') ? Math.max(1, ageDmg - 1) : ageDmg));
   }
-  if (a >= 18 && S.money < -50) S.happy = clamp(S.happy - 2);
-  if (S.happy > 75) S.happy -= 1;
-  if (S.happy < 25) S.happy += 1;
+  // 65歳以降の知力・創造性・社交の緩やかな加齢減衰（何もしないと衰えるが、シニア行動で維持可能）
+  if (a >= 65) {
+    if (chance(0.4) && !hasTrait('genius')) S.smarts = clamp(S.smarts - 1);
+    if (chance(0.4) && !hasTrait('artist')) S.creativity = clamp(S.creativity - 1);
+    if (chance(0.35) && !hasTrait('charisma')) S.social = clamp(S.social - 1);
+  }
+
+  // 借金による精神的ストレス
+  if (a >= 18 && S.money < -100) {
+    S.happy = clamp(S.happy - (S.money < -500 ? 5 : 3));
+  }
+  if (S.happy > 80) S.happy -= 1;
+  if (S.happy < 20) S.happy += 1;
 
   S.happySum += S.happy; S.years++;
   const cause = deathCheck();
@@ -4501,7 +4652,39 @@ function evaluate() {
     on: a.check(S, wealth, finAssets, avg),
   }));
   const got = ach.filter(a => a.on).length;
-  const score = Math.max(0, Math.round(avg * 0.65 + Math.min(S.age, 100) * 0.2 + got * 2.5 + (wealth >= 0 ? Math.min(14, wealth / 1000) : -5)));
+
+  // 基本スコア（幸福度・年齢・実績・資産）
+  let baseScore = avg * 0.55 + Math.min(S.age, 100) * 0.18 + got * 2.2 + (wealth >= 0 ? Math.min(12, wealth / 1200) : -8);
+
+  // 【多軸評価：生き様ボーナス】
+  let styleBonus = 0;
+  let lifeStyle = '王道';
+
+  // 1. 太く短いロックスター型（30〜55歳で夭折しても圧倒的な実績や才能・名声があれば高ランク）
+  if (S.age <= 55 && (S.flags.founder || S.flags.ceo || S.flags.star || S.flags.pro || got >= 6)) {
+    const youthImpact = (got * 3.5) + (S.smarts >= 80 ? 8 : 0) + (S.creativity >= 80 ? 8 : 0) + (wealth >= 5000 ? 10 : 0);
+    styleBonus += Math.min(32, youthImpact);
+    lifeStyle = '閃光';
+  }
+
+  // 2. 波乱万丈・不屈の逆転劇型（借金や離婚・大病を乗り越えて生き抜いたドラマ）
+  if (S.flags.divorced || S.cause === '衰弱・大病' || (S.money < 0 && wealth > 1000)) {
+    styleBonus += 14;
+    lifeStyle = '不屈';
+  }
+
+  // 3. 清貧の名人・家庭円満型（資産控えめでも高い幸福度と大家族）
+  if (wealth < 5000 && avg >= 78 && S.married && S.kids.length >= 2) {
+    styleBonus += 16;
+    lifeStyle = '清貧の名匠';
+  }
+
+  // 4. 学術・文化の探求者（知力・創造性がともにトップレベル）
+  if (S.smarts >= 85 && S.creativity >= 85) {
+    styleBonus += 12;
+  }
+
+  const score = Math.max(0, Math.round(baseScore + styleBonus));
   const rank = score >= 85 ? 'S' : score >= 72 ? 'A' : score >= 60 ? 'B' : score >= 45 ? 'C' : 'D';
 
   let title = '平凡で愛おしい人生';
@@ -5167,5 +5350,8 @@ window.__getS = () => S;
 window.__setS = v => { S = v; };
 window.showEnd = showEnd;
 window.showScreen = showScreen;
-window.renderHud = renderHud;
 window.showStatFloats = showStatFloats;
+window.evaluate = evaluate;
+window.pension = pension;
+window.currentActions = currentActions;
+window.yearEnd = yearEnd;
