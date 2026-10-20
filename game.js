@@ -168,7 +168,6 @@ const fmtMoney = m => {
 const JOBS = [
   // 学歴・文理不問
   { name: 'フリーター', base: 180, edu: 0, req: {}, icon: '🧃', desc: '気ままに働く自由人' },
-  { name: '動画配信者', base: 420, edu: 0, req: { creativity: 55, social: 40 }, icon: '🎥', desc: '企画力と発信力で勝負' },
   { name: '工場スタッフ', base: 320, edu: 1, req: { fitness: 35 }, icon: '🏭', corp: true, desc: 'ものづくりの現場を支える' },
   { name: '販売スタッフ', base: 300, edu: 1, req: { social: 38 }, icon: '🛍️', corp: true, desc: '丁寧な接客とコミュニケーション' },
   { name: '料理人', base: 350, edu: 1, req: { fitness: 38, creativity: 30 }, icon: '🍳', desc: '体力と味のセンスを磨く職人' },
@@ -982,19 +981,6 @@ const ACTIONS = {
             return '市場環境の変化により業績がやや落ち込んだ…';
           }
           return '会社経営に全力を注いだ。';
-        }
-
-        // 動画配信者（上限3,000万円）
-        if (j.name === '動画配信者') {
-          const cap = 3000;
-          if (j.base < cap && chance(0.18 + S.creativity / 400 + (hasTrait('charisma') ? 0.1 : 0))) {
-            const rate = j.base > 1500 ? 1.07 : 1.13;
-            j.base = Math.min(cap, Math.round(j.base * rate));
-            fx({ happy: 5, creativity: 1 });
-            playSE('fanfare');
-            return '企画動画が注目を集め、チャンネル登録者数が増加！';
-          }
-          return '毎日ネタを考えて動画投稿をコツコツ続けた。';
         }
 
         // ミュージシャン（上限2,800万円）
