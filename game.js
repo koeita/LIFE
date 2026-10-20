@@ -6121,6 +6121,15 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ダブルタップによる意図しないズームイン・拡大の防止 (iOS/Android)
+document.addEventListener('dblclick', (e) => {
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('gesturestart', (e) => {
+  e.preventDefault();
+});
+
 // モーダル背景領域のタッチスクロール防止
 const modalEl = $('#modal');
 if (modalEl) {

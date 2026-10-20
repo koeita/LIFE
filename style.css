@@ -1456,7 +1456,14 @@ body:has(#modal:not([hidden])) {
 .hof-share-btn:hover { background: color-mix(in srgb, var(--accent) 25%, transparent); border-color: var(--accent); transform: translateY(-1px); }
 
 /* ===== ホバー・タッチ操作の最適化 ===== */
-button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; outline: none; }
+html, body, button, a, input, select, .action, .choice, .life-btn, .tab-btn, .panel, .glass, .screen, .modal, .modal-card {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
 .hint-touch { display: none; }
 
 /* マウス操作（PC）のみホバー発光を適用（スマホでのタップ位置の発光残りを防止） */
