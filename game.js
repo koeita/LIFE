@@ -982,7 +982,7 @@ const ACTIONS = {
       }
     },
     {
-      icon: '👟', label: '現役引退（セカンドキャリアへ）', desc: 'スパイクを脱ぎ、新たな道へ',
+      icon: '👟', label: '現役引退・転身', desc: 'スパイクを脱ぎ、新たな道へ',
       confirm: '本当に現役を引退しますか？\n（プロスポーツ選手としてのキャリアを終え、新しい仕事を探します）',
       fn() {
         const bonus = Math.round(salary() * 0.6);
@@ -1010,7 +1010,7 @@ const ACTIONS = {
       }
     },
     {
-      icon: '🎤', label: '全国ライブツアー開催', desc: '社交↑↑ 体力↓ ファン急増・臨時ボーナス',
+      icon: '🎤', label: '全国ライブツアー', desc: '社交↑↑ 体力↓ ファン急増・臨時ボーナス',
       fn() {
         const bonus = Math.round(salary() * r(0.3, 0.7));
         fx({ social: r(3, 6) + (hasTrait('charisma') ? 2 : 0), fitness: -r(2, 4), happy: r(3, 6), money: bonus });
@@ -1019,7 +1019,7 @@ const ACTIONS = {
       }
     },
     {
-      icon: '💿', label: '勝負のニューアルバム発売', desc: '運と実力で大ヒット判定！一攫千金',
+      icon: '💿', label: 'アルバムリリース', desc: '運と実力で大ヒット判定！一攫千金',
       fn() {
         fx({ fitness: -2 });
         const eff = S.creativity + S.social + (hasTrait('absolute_pitch') ? 25 : 0) + (hasTrait('lucky') ? 15 : 0);
@@ -5976,6 +5976,7 @@ window.__setS = v => { S = v; };
 window.showEnd = showEnd;
 window.showScreen = showScreen;
 window.showStatFloats = showStatFloats;
+window.renderAll = renderAll;
 window.evaluate = evaluate;
 window.pension = pension;
 window.currentActions = currentActions;
