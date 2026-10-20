@@ -1183,13 +1183,25 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
     padding-left: max(12px, env(safe-area-inset-left));
     padding-right: max(12px, env(safe-area-inset-right));
   }
-  body[data-stage]:not([data-stage="start"]):not([data-stage="end"]) {
+  body[data-stage]:not([data-stage="end"]) {
     overflow: hidden;
     height: 100dvh;
+    overscroll-behavior: none;
   }
   #app {
     height: 100%;
     min-height: 0;
+  }
+  #screen-start {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   #screen-game {
     height: 100vh;
@@ -1202,88 +1214,99 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   .blob { filter: blur(60px); }
   .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 
-  /* スタート画面（スマホで全ボタンが1画面にきれいに収まるよう最適化） */
-  .start-card, .end-card {
+  /* スタート画面（画面内に完全固定・スクロール不可） */
+  .start-card {
+    padding: 12px 14px;
+    max-width: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .end-card {
     padding: 18px 16px;
     max-width: 100%;
   }
   .logo {
-    font-size: 2.2rem;
-    margin-bottom: 2px;
+    font-size: 1.8rem;
+    margin-bottom: 0px;
   }
   .title {
-    font-size: 2.3rem;
-    margin: 2px 0 6px;
+    font-size: 1.95rem;
+    margin: 0 0 2px;
     letter-spacing: .08em;
+    line-height: 1.05;
   }
   .title span {
-    font-size: .8rem;
-    letter-spacing: .35em;
-    margin-top: 2px;
+    font-size: .72rem;
+    letter-spacing: .3em;
+    margin-top: 1px;
   }
   .lead {
-    font-size: .82rem;
-    line-height: 1.45;
-    margin-bottom: 12px;
+    font-size: .75rem;
+    line-height: 1.35;
+    margin-bottom: 8px;
   }
   .name-row {
-    margin-bottom: 8px;
-    gap: 8px;
+    margin-bottom: 6px;
+    gap: 6px;
   }
   .name-row input {
-    font-size: 16px; /* iOSの自動ズーム防止 */
-    padding: 10px 14px;
-    border-radius: 12px;
+    font-size: 15px; /* iOSの自動ズーム防止 */
+    padding: 8px 12px;
+    border-radius: 10px;
   }
   .icon-btn {
-    width: 44px;
-    border-radius: 12px;
-    font-size: 1.15rem;
+    width: 38px;
+    border-radius: 10px;
+    font-size: 1.05rem;
   }
   .start-options {
-    gap: 8px;
-    margin-bottom: 12px;
-    padding: 8px 10px;
-    border-radius: 12px;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    border-radius: 10px;
   }
   .option-group {
-    gap: 4px;
+    gap: 3px;
   }
   .option-label {
-    font-size: .72rem;
+    font-size: .68rem;
   }
   .option-chips {
-    gap: 5px;
+    gap: 4px;
   }
   .opt-chip {
-    padding: 4px 9px;
-    font-size: .76rem;
+    padding: 3px 8px;
+    font-size: .72rem;
     border-radius: 6px;
   }
   .main-menu-btns {
-    gap: 8px;
+    gap: 6px;
   }
   .btn {
-    padding: 11px 20px;
-    font-size: .95rem;
-    border-radius: 14px;
+    padding: 9px 16px;
+    font-size: .88rem;
+    border-radius: 12px;
   }
   .btn.primary {
-    font-size: 1.02rem;
-    padding: 12px 20px;
+    font-size: .96rem;
+    padding: 10px 16px;
   }
   .btn.sub-btn {
-    font-size: .85rem;
-    padding: 9px 16px;
+    font-size: .8rem;
+    padding: 7px 12px;
   }
   .howto {
-    margin-top: 12px;
-    gap: 5px;
-    font-size: .75rem;
+    margin-top: 8px;
+    gap: 4px;
+    font-size: .7rem;
+    line-height: 1.25;
   }
   .best {
-    margin-top: 8px;
-    font-size: .75rem;
+    margin-top: 6px;
+    font-size: .7rem;
   }
 
   /* ヘッダー */
