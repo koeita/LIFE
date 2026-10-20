@@ -396,6 +396,91 @@ function recordMetaTraitAndJob() {
   saveMeta(m);
 }
 
+
+// ---------- 人生アルバム（メモリアルスナップ） ----------
+function addAlbumSnap(snap) {
+  if (!S) return;
+  if (!Array.isArray(S.album)) S.album = [];
+  if (S.album.some(s => s.id === snap.id)) return;
+  const entry = {
+    id: snap.id,
+    age: typeof snap.age === 'number' ? snap.age : S.age,
+    icon: snap.icon || '📸',
+    title: snap.title,
+    desc: snap.desc,
+    tag: snap.tag || 'メモリアル',
+  };
+  S.album.push(entry);
+  toast(`📸 アルバムにスナップ「${snap.title}」を記録！`, []);
+  updateAlbumBadge();
+}
+
+function updateAlbumBadge() {
+  const el = $('#album-badge-count');
+  if (el) {
+    const count = (S && Array.isArray(S.album)) ? S.album.length : 0;
+    el.textContent = `${count}枚`;
+  }
+}
+
+function renderSnapCardHtml(snap) {
+  return `
+    <div class="snap-card" data-snap-id="${escapeHtml(snap.id)}">
+      <div class="snap-photo">
+        <span class="snap-icon">${snap.icon}</span>
+      </div>
+      <div class="snap-meta">
+        <span class="snap-age">${snap.age}歳</span>
+        <span class="snap-tag">${escapeHtml(snap.tag)}</span>
+      </div>
+      <div class="snap-title" title="${escapeHtml(snap.title)}">${escapeHtml(snap.title)}</div>
+      <div class="snap-desc">${escapeHtml(snap.desc)}</div>
+    </div>
+  `;
+}
+
+function openAlbumModal() {
+  playSE('click');
+  const album = (S && Array.isArray(S.album)) ? S.album : [];
+  if (!album.length) {
+    runEvent({
+      badge: 'ALBUM',
+      icon: '📸',
+      title: '人生アルバム',
+      text: 'まだアルバムに写真がありません。人生の節目を迎えると自動で思い出が記録されていきます！',
+      choices: [{ label: '閉じる', cancel: true, fn: () => '' }],
+    });
+    return;
+  }
+
+  const cardsHtml = album.map(s => renderSnapCardHtml(s)).join('');
+  const html = `
+    <p style="font-size:.84rem;color:var(--muted);margin-bottom:8px;">これまでの人生で記録された思い出のスナップ（全${album.length}枚）</p>
+    <div class="album-modal-grid">${cardsHtml}</div>
+  `;
+
+  runEvent({
+    badge: 'ALBUM',
+    icon: '📸',
+    title: `${S.name}の人生アルバム（${album.length}枚）`,
+    html,
+    choices: [
+      { label: '閉じる', cancel: true, fn: () => '' },
+    ],
+  });
+}
+
+function renderEndAlbum() {
+  const box = $('#end-album');
+  if (!box) return;
+  const album = (S && Array.isArray(S.album)) ? S.album : [];
+  if (!album.length) {
+    box.innerHTML = `<p style="font-size:.82rem;color:var(--muted);padding:8px;">アルバムの記録がありません。</p>`;
+    return;
+  }
+  box.innerHTML = album.map(s => renderSnapCardHtml(s)).join('');
+}
+
 // ---------- 状態 ----------
 let S = null;
 let busy = false;
@@ -419,6 +504,7 @@ function ensureState(s) {
   if (!s.lesson) s.lesson = null;
   if (!s.lastJob) s.lastJob = null;
   if (!s.lastInvestSummary) s.lastInvestSummary = null;
+  if (!Array.isArray(s.album)) s.album = [];
   if (!s.club) s.club = null;
   if (!s.hsActivity) s.hsActivity = null;
   // 旧ステータス(health, looks)からの移行
@@ -491,7 +577,7 @@ function newLife(name, gender = 'random', orientation = 'hetero') {
 
   S = ensureState({
     name, gender: finalGender, orientation: finalOrientation,
-    age: 0, gen, mbti, traits, family: fam,
+    age: 0, gen, mbti, traits, family: fam, album: [],
     smarts: clamp(r(20, 36) + (fam === 'rich' ? 4 : 0) + (traits.includes('genius') ? 8 : 0) + bonusStat),
     fitness: clamp(r(24, 38) + (traits.includes('iron') ? 10 : 0)),
     social: clamp(r(22, 38) + (traits.includes('charisma') ? 8 : 0) + bonusStat),
@@ -514,6 +600,7 @@ function newLife(name, gender = 'random', orientation = 'hetero') {
 
 function setPartner(name, love = 65, specificJob = null) {
   S.partner = name;
+  addAlbumSnap({ id: 'first_love', age: S.age, icon: '💕', title: '運命の恋人成立', desc: `${name}と気持ちが通じ合い、特別な関係がスタートした！`, tag: '恋愛' });
   S.partnerLove = clamp(love + (hasTrait('beloved') ? 10 : 0));
   let jobObj = specificJob;
   if (!jobObj) {
@@ -554,6 +641,9 @@ function addKid() {
     indep: false,
   };
   S.kids.push(kid);
+  if (S.kids.length === 1) {
+    addAlbumSnap({ id: 'first_baby', age: S.age, icon: '👶', title: '我が子の誕生', desc: `「${kid.name}」を腕に抱き、親としての新たな人生が始まった。`, tag: '家族' });
+  }
   return kid;
 }
 
@@ -1329,6 +1419,7 @@ function chooseLessonEvent() {
         sub: '体力↑↑｜運動センス開花のチャンス',
         fn() {
           S.lesson = 'soccer';
+          addAlbumSnap({ id: 'lesson_soccer', age: S.age, icon: '⚽', title: 'サッカースクール開始', desc: '放課後はグラウンドを駆け回り、強い足腰と反射神経を鍛え始めた！', tag: '才能' });
           fx({ fitness: 5, happy: 2 });
           return 'ボールを追いかけ、プールで泳ぎ、強い足腰と反射神経を鍛え始めた！';
         }
@@ -1338,6 +1429,7 @@ function chooseLessonEvent() {
         sub: '創造↑↑ 知力↑｜絶対音感開花のチャンス',
         fn() {
           S.lesson = 'piano';
+          addAlbumSnap({ id: 'lesson_piano', age: S.age, icon: '🎹', title: 'ピアノ教室に通い始める', desc: '澄んだ美しい音色に魅せられ、毎日の練習に夢中になり始めた！', tag: '才能' });
           fx({ creativity: 5, smarts: 2, happy: 2 });
           return '鍵盤に触れると澄んだ音が響く！毎日楽しそうにピアノの前に座り始めた。';
         }
@@ -1347,6 +1439,7 @@ function chooseLessonEvent() {
         sub: '知力↑↑ 創造↑｜ロジカル思考開花のチャンス',
         fn() {
           S.lesson = 'coding';
+          addAlbumSnap({ id: 'lesson_coding', age: S.age, icon: '💻', title: 'プログラミング学習開始', desc: 'ブロックを組み立ててプログラムが動いた感動に目を輝かせた！', tag: '才能' });
           fx({ smarts: 6, creativity: 2, happy: 1 });
           return '画面の中のパズルやブロックコードを動かせた！論理的な発想に夢中になった！';
         }
@@ -1356,6 +1449,7 @@ function chooseLessonEvent() {
         sub: '創造↑↑ 幸福↑｜芸術センス開花のチャンス',
         fn() {
           S.lesson = 'art';
+          addAlbumSnap({ id: 'lesson_art', age: S.age, icon: '🎨', title: '造形・お絵かき教室開始', desc: 'キャンバスに色彩豊かな自由な世界を描き、先生に褒められた！', tag: '才能' });
           fx({ creativity: 6, happy: 3 });
           return '絵の具と粘土で自由な世界を表現！先生にもその豊かな色彩を褒められた！';
         }
@@ -1384,6 +1478,7 @@ function chooseClubEvent() {
         sub: '体力↑↑ 社交↑｜プロアスリートへの第一歩',
         fn() {
           S.club = 'sports';
+          addAlbumSnap({ id: 'club_sports', age: S.age, icon: '⚽', title: '中学校の運動部に入部', desc: '先輩たちの迫力あるプレーに圧倒されつつ、厳しい練習に食らいつき始めた！', tag: '青春' });
           if (S.lesson === 'soccer' || hasTrait('athletic_sense')) {
             fx({ fitness: 6, social: 3, happy: 4 });
             S.flags.sports_regular = true;
@@ -1398,6 +1493,7 @@ function chooseClubEvent() {
         sub: '創造↑↑ 社交↑｜バンド・音楽家への道',
         fn() {
           S.club = 'music';
+          addAlbumSnap({ id: 'club_music', age: S.age, icon: '🎷', title: '吹奏楽・軽音楽部に入部', desc: '光り輝く楽器を手にして、仲間と音を重ねる楽しさに目覚めた！', tag: '青春' });
           if (S.lesson === 'piano' || hasTrait('absolute_pitch')) {
             fx({ creativity: 6, social: 3, happy: 4 });
             S.flags.music_talent = true;
@@ -1412,6 +1508,7 @@ function chooseClubEvent() {
         sub: '知力↑↑ 創造↑｜エンジニア・起業への道',
         fn() {
           S.club = 'tech';
+          addAlbumSnap({ id: 'club_tech', age: S.age, icon: '💻', title: 'パソコン・科学部に入部', desc: '放課後のPCルームに籠もり、仲間と未知のコードの世界へ没頭した！', tag: '青春' });
           if (S.lesson === 'coding' || hasTrait('logical_mind')) {
             fx({ smarts: 6, creativity: 3, happy: 3 });
             S.flags.tech_geek = true;
@@ -1426,6 +1523,7 @@ function chooseClubEvent() {
         sub: '創造↑↑ 幸福↑｜クリエイターへの道',
         fn() {
           S.club = 'art';
+          addAlbumSnap({ id: 'club_art', age: S.age, icon: '🎨', title: '美術・アート部に入部', desc: '油絵の具と石膏像に囲まれ、自分だけの表現を追い求め始めた！', tag: '青春' });
           if (S.lesson === 'art' || hasTrait('artist')) {
             fx({ creativity: 6, happy: 4 });
             S.flags.art_talent = true;
@@ -1450,20 +1548,28 @@ function chooseClubEvent() {
 
 function milestone(a) {
   // 5歳（6歳になる春）：小学校入学 ＆ 習い事選び
-  if (a === 5) return {
-    icon: '🎒', title: '小学校入学', text: 'ピカピカのランドセルを背負って、春から小学生！',
-    choices: [{
-      label: 'いってきます！',
-      fn() {
-        S.student = true;
-        fx({ happy: 3 });
-        return {
-          text: '新しい友達がたくさんできた。',
-          then: chooseLessonEvent()
-        };
-      }
-    }]
-  };
+  if (a === 5) {
+    addAlbumSnap({
+      id: 'elem_enter', age: 6, icon: '🎒',
+      title: '小学校入学式',
+      desc: 'ピカピカのランドセルを背負い、期待と不安を胸に校門をくぐった。',
+      tag: '学校'
+    });
+    return {
+      icon: '🎒', title: '小学校入学', text: 'ピカピカのランドセルを背負って、春から小学生！',
+      choices: [{
+        label: 'いってきます！',
+        fn() {
+          S.student = true;
+          fx({ happy: 3 });
+          return {
+            text: '新しい友達がたくさんできた。',
+            then: chooseLessonEvent()
+          };
+        }
+      }]
+    };
+  }
 
   // 6歳以降で習い事がまだ未設定の場合のフォールバック
   if (a >= 6 && a <= 10 && S.student && !S.lesson) {
@@ -1727,6 +1833,7 @@ function milestone(a) {
             S.ronin = 0;
             S.edu = 2; // 大学在学
             S.uni = uniFullName;
+            addAlbumSnap({ id: 'uni_enter', age: S.age, icon: '🎓', title: '大学合格・進学', desc: `見事【${uniFullName}】に合格！憧れのキャンパスへ。`, tag: '学業' });
             S.uniRank = sch.rank;
             fx({ happy: 8 + sch.rank * 2 });
             playSE('fanfare');
@@ -1794,6 +1901,7 @@ function milestone(a) {
           fn() {
             S.student = false; S.edu = 2;
             setJob({ name: 'プロスポーツ選手', base: 1200, icon: '🏅' });
+            addAlbumSnap({ id: 'pro_draft1', age: 18, icon: '🏅', title: 'ドラフト1位契約', desc: '契約金5000万円でプロ球団へ入団！華々しいプロ人生の開幕。', tag: '栄光' });
             S.flags.pro = true;
             fx({ money: 5000, happy: 15, social: 8 });
             playSE('fanfare');
@@ -1834,6 +1942,7 @@ function milestone(a) {
           fn() {
             S.student = false; S.edu = 2;
             setJob({ name: 'ミュージシャン', base: 600, icon: '🎸' });
+            addAlbumSnap({ id: 'major_debut_snap', age: 18, icon: '🎸', title: 'メジャー契約締結', desc: '大手レーベルからメジャーデビュー！全国へ歌声を届ける。', tag: '栄光' });
             S.flags.star = true;
             fx({ money: 1500, happy: 15, social: 8 });
             playSE('fanfare');
@@ -1959,6 +2068,7 @@ function milestone(a) {
             const skillScore = (S.fitness || 0) + (S.sportSkill ? S.sportSkill * 4 : 0);
             if (skillScore >= 75 || hasTrait('athletic_sense') || hasTrait('iron')) {
               S.flags.scouted_pro = true;
+              addAlbumSnap({ id: 'hs_interhigh', age: 16, icon: '🏟️', title: 'インターハイの栄光', desc: '全国ベスト4に進出！プロ球団のスカウト陣を熱狂させた。', tag: '栄光' });
               fx({ fitness: 4, happy: 10, social: 5 });
               playSE('fanfare');
               return '全国ベスト4に進出！長年の猛練習が実を結び、「ドラフト上位候補」としてスカウトの目を釘付けにした！';
@@ -1979,6 +2089,7 @@ function milestone(a) {
             const musicScore = (S.creativity || 0) + (S.musicSkill ? S.musicSkill * 4 : 0);
             if (musicScore >= 75 || hasTrait('absolute_pitch') || hasTrait('artist')) {
               S.flags.major_debut_offer = true;
+              addAlbumSnap({ id: 'hs_musicfest', age: 16, icon: '🎸', title: 'ティーンズフェス優勝', desc: '応募総数3000組の頂点に立ち、メジャー契約を打診された！', tag: '栄光' });
               fx({ creativity: 4, happy: 10, social: 6 });
               playSE('fanfare');
               return 'グランプリを獲得！圧倒的な演奏と楽曲の完成度に、大手レコード会社からメジャーデビューを打診された！';
@@ -1999,6 +2110,7 @@ function milestone(a) {
             const techScore = (S.smarts || 0) + (S.creativity || 0) / 2 + (S.techSkill ? S.techSkill * 4 : 0);
             if (techScore >= 75 || hasTrait('logical_mind') || hasTrait('genius')) {
               S.flags.tech_star = true;
+            addAlbumSnap({ id: 'hs_techcontest', age: 16, icon: '💻', title: 'プロコン最優秀賞', desc: '自作アプリが10万DLを突破！VCから出資の打診が殺到した。', tag: '栄光' });
               S.flags.tech_geek = true;
               fx({ smarts: 5, creativity: 3, happy: 10, money: 50 });
               playSE('fanfare');
@@ -2021,6 +2133,7 @@ function milestone(a) {
             const artScore = (S.creativity || 0) + (S.artSkill ? S.artSkill * 4 : 0);
             if (artScore >= 75 || hasTrait('artist') || hasTrait('charisma')) {
               S.flags.art_star = true;
+            addAlbumSnap({ id: 'hs_artexhib', age: 16, icon: '🎨', title: '高校美術展大臣賞', desc: '大作油絵が文部科学大臣賞を受賞！若き天才と称賛された。', tag: '栄光' });
               fx({ creativity: 6, happy: 10, social: 5, looks: 2 });
               playSE('fanfare');
               return '文部科学大臣賞を受賞！圧倒的な表現力と独創性が絶賛され、若手クリエイターとしてメディアに特集された！';
@@ -2249,6 +2362,7 @@ function milestone(a) {
               t = `長年の勤務、本当にお疲れさまでした！退職金 ${fmtMoney(b)} を受け取った！`;
             }
             S.job = null; S.retired = true; fx({ happy: 8 });
+            addAlbumSnap({ id: 'retire_snap', age: 65, icon: '💐', title: '満期定年退職の佳き日', desc: '長年勤め上げた職場を無事卒業。温かい拍手と花束に包まれた。', tag: '余生' });
             return t;
           }
         }]
@@ -2399,6 +2513,7 @@ function openLoveMenu() {
           S.actedLoveYear = S.age;
           if (chance(propRate / 100)) {
             S.married = true; S.flags.married = true;
+            addAlbumSnap({ id: 'wedding', age: S.age, icon: '💍', title: '永遠の誓い・結婚式', desc: `最愛の伴侶「${S.partner}」と手を取り合い、生涯を共にする誓いを立てた！`, tag: '家族' });
             S.partnerLove = clamp(S.partnerLove + 15);
             fx({ money: -80, happy: 16 });
             playSE('fanfare');
@@ -2631,6 +2746,7 @@ function openHouseMenu() {
       fn() {
         fx({ money: -netCost, happy: h.happy * 4, looks: h.id === 'tower' ? 6 : 2 });
         S.assets.house = h.id;
+        addAlbumSnap({ id: 'buy_house_' + h.id, age: S.age, icon: h.icon || '🏠', title: `夢のマイホーム「${h.name}」`, desc: `${h.name}を購入！家族と共に過ごすかけがえのない城を手に入れた。`, tag: '住まい' });
         S.flags.house = true;
         playSE('fanfare');
         return { text: `${h.name}を購入した！理想のマイホーム生活が始まる！`, then: openAssetMenu() };
@@ -4592,6 +4708,7 @@ function totalWealth() {
 }
 
 function renderAll() {
+  updateAlbumBadge();
   ensureState(S);
   applyPrefsUI();
   const st = stage();
@@ -5551,6 +5668,7 @@ function showEnd() {
   $('#end-stats').innerHTML = stats.map(([a, b]) => `<div class="end-stat"><small>${a}</small><b>${b}</b></div>`).join('');
   lastShare = buildShareData(e, finalEdu);
   renderChart();
+  renderEndAlbum();
   $('#end-ach').innerHTML = e.ach.map(a => `<span class="${a.on ? 'on' : 'off'}">${a.icon} ${a.name}</span>`).join('');
   $('#end-timeline').innerHTML = S.log.filter(l => l.major).map(l => `<li><span class="t-age">${l.age}歳</span><span>${l.icon} ${l.text}</span></li>`).join('');
 
@@ -5605,6 +5723,7 @@ function buildShareData(e, finalEdu = null) {
     `😊 平均幸福度 ${e.avg} ／ 💰 総資産 ${fmtMoney(e.wealth)}`,
     `🎓 学歴 ${eduStr} ／ 💼 ${job}`,
     `👨‍👩‍👧 ${family} ／ 🎖️ 実績 ${e.got}/${e.ach.length}`,
+    `📸 人生アルバム：${(S && S.album) ? S.album.length : 0}枚の思い出`, 
     '#LIFEひとつの人生',
     url,
   ].filter(Boolean).join('\n');
@@ -5967,6 +6086,12 @@ function doStartNewGame() {
   // 確定した finalGender に合致した名前を使用（空欄ならその性別で生成）
   const name = inputVal || randomName(finalGender);
   newLife(name, finalGender, selectedOrientation);
+  addAlbumSnap({
+    id: 'birth', age: 0, icon: '🍼',
+    title: 'この世に誕生！',
+    desc: '家族の祝福を受け、この広い世界に元気な産声をあげて誕生した。',
+    tag: '生誕'
+  });
   $('#log').innerHTML = '';
   busy = false;
   switchTab('action', true);
@@ -6065,6 +6190,8 @@ if ($('#mini-stats')) {
 $('#btn-start').onclick = () => startGame();
 $('#btn-resume').onclick = () => resumeGame();
 $('#btn-collection').onclick = () => openCollectionModal();
+const albumBtn = $('#btn-open-album');
+if (albumBtn) albumBtn.onclick = () => openAlbumModal();
 $('#btn-share').onclick = () => openShareModal();
 $('#btn-sound').onclick = () => { prefs.sound = !prefs.sound; savePrefs(); if (prefs.sound) playSE('good'); };
 $('#input-name').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });

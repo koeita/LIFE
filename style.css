@@ -1542,6 +1542,153 @@ html {
   color: var(--muted);
 }
 
+
+/* ===== 人生アルバム（メモリアルスナップ） ===== */
+.album-log-banner {
+  margin-bottom: 14px;
+}
+.album-open-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.album-open-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.aob-icon { font-size: 1.25rem; margin-right: 8px; }
+.aob-txt { font-weight: 700; font-size: .88rem; flex: 1; text-align: left; }
+.aob-count {
+  font-size: .75rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #0b071e;
+}
+
+/* ポラロイド風スナップカード一覧 */
+.end-album-wrap,
+.album-modal-grid {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 6px 16px;
+  margin-bottom: 12px;
+  scroll-snap-type: x mandatory;
+}
+.end-album-wrap::-webkit-scrollbar,
+.album-modal-grid::-webkit-scrollbar {
+  height: 6px;
+}
+.end-album-wrap::-webkit-scrollbar-thumb,
+.album-modal-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+}
+
+/* ポラロイドカード本体 */
+.snap-card {
+  flex: 0 0 200px;
+  width: 200px;
+  background: #fdfbf7;
+  color: #1e1b2e;
+  border-radius: 10px;
+  padding: 10px 10px 14px;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  scroll-snap-align: center;
+  transition: transform .2s ease, box-shadow .2s ease;
+  user-select: none;
+}
+.snap-card:nth-child(even) { transform: rotate(1deg); }
+.snap-card:nth-child(odd) { transform: rotate(-1deg); }
+.snap-card:hover {
+  transform: translateY(-4px) rotate(0deg) scale(1.02);
+  box-shadow: 0 14px 30px -8px rgba(0, 0, 0, 0.55);
+  z-index: 2;
+}
+
+/* 写真枠 */
+.snap-photo {
+  height: 120px;
+  background: linear-gradient(135deg, #1e1b2e, #2d264a);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+.snap-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), transparent 70%);
+  pointer-events: none;
+}
+.snap-icon {
+  font-size: 3.2rem;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+  transition: transform .2s ease;
+}
+.snap-card:hover .snap-icon {
+  transform: scale(1.1) rotate(4deg);
+}
+
+/* カード内テキスト */
+.snap-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.snap-age {
+  font-size: .7rem;
+  font-weight: 800;
+  padding: 1.5px 6px;
+  border-radius: 6px;
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.snap-tag {
+  font-size: .65rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.snap-title {
+  font-size: .84rem;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 4px;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.snap-desc {
+  font-size: .72rem;
+  line-height: 1.35;
+  color: #475569;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 2.7em;
+}
+
 @media (max-width: 720px) {
   .screen {
     padding: 12px;
