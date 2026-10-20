@@ -1109,9 +1109,58 @@ body:has(#modal:not([hidden])) {
 @media (max-width: 420px) { .share-btns { grid-template-columns: 1fr; } }
 
 /* コレクション図鑑・殿堂入りモーダル内 */
-.col-wrap { text-align: left; max-height: 44vh; overflow-y: auto; padding-right: 6px; margin-bottom: 14px; display: grid; gap: 14px; }
+.col-wrap {
+  text-align: left;
+  max-height: 48vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  margin-bottom: 12px;
+  display: grid;
+  gap: 14px;
+}
 .col-wrap::-webkit-scrollbar { width: 6px; }
 .col-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 9px; }
+
+/* 図鑑モーダル：ボタンはスクロールさせず下部に固定、図鑑リスト側をスクロール */
+.modal-card:has(.col-wrap),
+.modal-card.has-col-wrap {
+  max-height: 90vh;
+  max-height: 90dvh;
+}
+.modal-card:has(.col-wrap) .modal-header-wrap,
+.modal-card.has-col-wrap .modal-header-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-card:has(.col-wrap) .modal-text,
+.modal-card.has-col-wrap .modal-text {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.modal-card:has(.col-wrap) .col-wrap,
+.modal-card.has-col-wrap .col-wrap {
+  flex: 1 1 auto;
+  min-height: 80px;
+  max-height: none;
+  overflow-y: auto;
+}
+.modal-card:has(.col-wrap) .modal-choices,
+.modal-card.has-col-wrap .modal-choices {
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  max-height: none !important;
+  margin-top: 8px;
+  gap: 8px;
+}
 .col-sec-title { font-size: .82rem; color: var(--accent); font-weight: 700; letter-spacing: .1em; margin-bottom: 8px; border-bottom: 1px solid var(--glass-border); padding-bottom: 4px; }
 .col-badges { display: flex; flex-wrap: wrap; gap: 6px; }
 .col-badge { font-size: .78rem; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.07); border: 1px solid var(--glass-border); }
@@ -1469,19 +1518,23 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   /* モーダルは画面下からのシート型 */
   .modal { place-items: end center; padding: 0; }
   .modal-card {
-    width: 100%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;
+    width: 100%; max-height: 88vh; max-height: 88dvh; display: flex; flex-direction: column; overflow: hidden;
     border-radius: 24px 24px 0 0; border-bottom: none;
-    padding: 20px 16px max(18px, env(safe-area-inset-bottom));
+    padding: 16px 16px max(16px, env(safe-area-inset-bottom));
     animation: sheetUp .35s cubic-bezier(.2,.9,.3,1);
   }
   .modal-card::before {
     content: ''; display: block; width: 40px; height: 4px; border-radius: 4px;
-    background: rgba(255,255,255,.25); margin: -8px auto 10px; flex: 0 0 auto;
+    background: rgba(255,255,255,.25); margin: -6px auto 8px; flex: 0 0 auto;
   }
-  .modal-icon { font-size: 2.4rem; margin: 0 0 4px; }
-  .modal-title { font-size: 1.15rem; margin-bottom: 6px; }
-  .modal-text { font-size: .88rem; line-height: 1.55; margin-bottom: 8px; }
-  .choice { padding: 11px 12px; font-size: .9rem; }
+  .modal-icon { font-size: 2.0rem; margin: 0 0 2px; }
+  .modal-title { font-size: 1.1rem; margin-bottom: 4px; }
+  .modal-text { font-size: .88rem; line-height: 1.5; margin-bottom: 6px; }
+  .choice { padding: 10px 12px; font-size: .88rem; }
+  .modal-card:has(.col-wrap) .col-wrap,
+  .modal-card.has-col-wrap .col-wrap {
+    max-height: 48vh;
+  }
 
   .toast {
     bottom: max(16px, env(safe-area-inset-bottom)); width: calc(100% - 24px);

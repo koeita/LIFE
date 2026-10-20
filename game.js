@@ -4099,6 +4099,7 @@ function runEvent(ev) {
       textEl.classList.remove('is-html');
       textEl.textContent = typeof ev.text === 'function' ? ev.text() : ev.text;
     }
+    card.classList.toggle('has-col-wrap', !!textEl.querySelector('.col-wrap'));
     $('#modal-chips').innerHTML = '';
     box.innerHTML = '';
     if (footerEl) {
