@@ -1118,16 +1118,185 @@ body:has(#modal:not([hidden])) {
 .end-name { font-size: 2.2rem; margin: 10px 0 4px; }
 .end-span { color: var(--muted); font-family: var(--font-en); margin-bottom: 26px; }
 .end-top { display: flex; align-items: center; justify-content: center; gap: 26px; margin-bottom: 26px; text-align: left; }
+/* ランク別リッチデザイン（高コントラスト＆ネオン発光） */
 .rank {
-  width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center;
-  font-family: var(--font-en); font-size: 3.6rem; font-weight: 800; color: #160f2b;
-  background: conic-gradient(from 180deg, var(--accent), var(--accent2), var(--accent));
-  box-shadow: 0 0 50px -6px var(--accent);
+  width: 110px; height: 110px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
   animation: zoomIn .8s cubic-bezier(.2,.9,.3,1.4) both .2s;
+  box-sizing: border-box;
 }
+.rank-letter {
+  font-family: var(--font-en);
+  font-size: 3.4rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.rank-sub {
+  font-family: var(--font-en);
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .15em;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* Rank S: ゴールデン・レジェンド */
+.rank.rank-s {
+  background: conic-gradient(from 180deg, #f59e0b, #fbbf24, #fffbeb, #f59e0b);
+  box-shadow: 0 0 55px 12px rgba(245, 158, 11, .55), inset 0 0 16px rgba(255,255,255,.7);
+  border: 3px solid #fef08a;
+  color: #3b1900;
+}
+.rank.rank-s .rank-sub { color: #78350f; }
+
+/* Rank A: エメラルド・グレート */
+.rank.rank-a {
+  background: conic-gradient(from 180deg, #10b981, #06b6d4, #a7f3d0, #10b981);
+  box-shadow: 0 0 45px 8px rgba(16, 185, 129, .45), inset 0 0 14px rgba(255,255,255,.6);
+  border: 3px solid #6ee7b7;
+  color: #022c22;
+}
+.rank.rank-a .rank-sub { color: #064e3b; }
+
+/* Rank B: サファイア・グッド */
+.rank.rank-b {
+  background: conic-gradient(from 180deg, #3b82f6, #8b5cf6, #bfdbfe, #3b82f6);
+  box-shadow: 0 0 40px 6px rgba(59, 130, 246, .4), inset 0 0 12px rgba(255,255,255,.5);
+  border: 3px solid #93c5fd;
+  color: #0c1e42;
+}
+.rank.rank-b .rank-sub { color: #1e3a8a; }
+
+/* Rank C: アンバー・ノーマル */
+.rank.rank-c {
+  background: conic-gradient(from 180deg, #d97706, #f59e0b, #fef3c7, #d97706);
+  box-shadow: 0 0 35px 4px rgba(217, 119, 6, .35), inset 0 0 10px rgba(255,255,255,.45);
+  border: 3px solid #fcd34d;
+  color: #451a03;
+}
+.rank.rank-c .rank-sub { color: #78350f; }
+
+/* Rank D: スレート・ハード */
+.rank.rank-d {
+  background: conic-gradient(from 180deg, #475569, #94a3b8, #e2e8f0, #475569);
+  box-shadow: 0 0 30px rgba(148, 163, 184, .3), inset 0 0 10px rgba(255,255,255,.4);
+  border: 3px solid #cbd5e1;
+  color: #0f172a;
+}
+.rank.rank-d .rank-sub { color: #1e293b; }
+
+/* ステータス変動フロートポップアップ演出 */
+.stat-float-pop {
+  position: fixed;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-en), var(--font);
+  font-size: .95rem;
+  font-weight: 800;
+  pointer-events: none;
+  animation: statFloatUp 1.2s cubic-bezier(.16, 1, .3, 1) forwards;
+  box-shadow: 0 4px 16px rgba(0,0,0,.45);
+}
+.stat-float-pop.up { color: #fff; }
+.stat-float-pop.down {
+  color: #fff;
+  background: linear-gradient(135deg, #b91c1c, #ef4444);
+  border: 1px solid #fca5a5;
+  box-shadow: 0 0 14px rgba(239, 68, 68, .5);
+}
+.stat-float-pop.smarts.up {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  border: 1px solid #93c5fd;
+  box-shadow: 0 0 16px rgba(59, 130, 246, .6);
+}
+.stat-float-pop.fitness.up {
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: 1px solid #6ee7b7;
+  box-shadow: 0 0 16px rgba(16, 185, 129, .6);
+}
+.stat-float-pop.social.up {
+  background: linear-gradient(135deg, #db2777, #ec4899);
+  border: 1px solid #fbcfe8;
+  box-shadow: 0 0 16px rgba(236, 72, 153, .6);
+}
+.stat-float-pop.creativity.up {
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  border: 1px solid #e9d5ff;
+  box-shadow: 0 0 16px rgba(139, 92, 246, .6);
+}
+.stat-float-pop.happy.up {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  border: 1px solid #fde68a;
+  box-shadow: 0 0 16px rgba(245, 158, 11, .6);
+}
+.stat-float-pop.money.up {
+  background: linear-gradient(135deg, #b45309, #eab308);
+  border: 1px solid #fef08a;
+  box-shadow: 0 0 18px rgba(234, 179, 8, .7);
+  color: #fff;
+}
+
+@keyframes statFloatUp {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(.6); }
+  20% { opacity: 1; transform: translate(-50%, -6px) scale(1.15); }
+  75% { opacity: 1; transform: translate(-50%, -24px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -42px) scale(.9); }
+}
+
+/* ミニステータス＆数値のフラッシュ光彩 */
+.mini-stat.stat-flash {
+  animation: flashMini .6s ease-out;
+}
+@keyframes flashMini {
+  0% { background: rgba(255, 255, 255, .35); box-shadow: 0 0 14px rgba(255, 255, 255, .6); transform: scale(1.06); }
+  100% { background: rgba(255, 255, 255, .04); box-shadow: none; transform: scale(1); }
+}
+
+/* トースト内のカラーチップ強化 */
+.chip.smarts.up { background: rgba(59, 130, 246, .22); color: #93c5fd; border: 1px solid #3b82f6; }
+.chip.fitness.up { background: rgba(16, 185, 129, .22); color: #6ee7b7; border: 1px solid #10b981; }
+.chip.social.up { background: rgba(236, 72, 153, .22); color: #fbcfe8; border: 1px solid #ec4899; }
+.chip.creativity.up { background: rgba(139, 92, 246, .22); color: #e9d5ff; border: 1px solid #8b5cf6; }
+.chip.happy.up { background: rgba(245, 158, 11, .22); color: #fde68a; border: 1px solid #f59e0b; }
+.chip.money.up { background: rgba(234, 179, 8, .22); color: #fef08a; border: 1px solid #eab308; }
 .end-title-label { color: var(--muted); font-size: .8rem; letter-spacing: .2em; }
-.end-title { font-size: 1.6rem; font-weight: 700; margin: 2px 0; }
-.end-score { color: var(--muted); font-family: var(--font-en); }
+.end-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  background: linear-gradient(135deg, #fff, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin: 3px 0 6px;
+}
+.end-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid var(--glass-border);
+  font-family: var(--font-en);
+}
+.score-label {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--muted);
+}
+.score-num {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: .05em;
+}
 .end-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 26px; }
 .end-stat { background: rgba(255,255,255,.05); border-radius: 14px; padding: 12px; }
 .end-stat small { display: block; color: var(--muted); font-size: .75rem; }
@@ -1600,7 +1769,9 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   /* エンディング */
   .end-name { font-size: 1.7rem; }
   .end-top { flex-direction: column; text-align: center; gap: 14px; }
-  .rank { width: 92px; height: 92px; font-size: 3rem; }
+  .rank { width: 92px; height: 92px; }
+  .rank-letter { font-size: 2.8rem; }
+  .rank-sub { font-size: .58rem; }
   .end-stats { grid-template-columns: 1fr 1fr; }
   .timeline li { grid-template-columns: 44px 1fr; font-size: .82rem; }
   #btn-restart { width: 100%; }

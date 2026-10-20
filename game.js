@@ -585,7 +585,7 @@ function fx(obj) {
 const snap = () => ({ smarts: S.smarts, fitness: S.fitness, social: S.social, creativity: S.creativity, happy: S.happy, money: S.money });
 const diff = b => Object.keys(b).map(k => ({ k, v: S[k] - b[k] })).filter(x => x.v !== 0);
 const chipsHTML = d => d.map(x =>
-  `<span class="chip ${x.v > 0 ? 'up' : 'down'}">${LABEL[x.k]} ${x.v > 0 ? '+' : ''}${x.v}${x.k === 'money' ? '万' : ''}</span>`).join('');
+  `<span class="chip ${x.k} ${x.v > 0 ? 'up' : 'down'}">${STAT_ICON[x.k] || (x.k === 'money' ? '💰' : '')} ${LABEL[x.k]} ${x.v > 0 ? '+' : ''}${x.v}${x.k === 'money' ? '万' : ''}</span>`).join('');
 
 function setJob(j) {
   S.job = { name: j.name, base: j.base, level: 0, corp: !!j.corp, icon: j.icon };
@@ -4012,12 +4012,57 @@ function renderLifeMenu() {
 }
 
 let toastTimer = null;
+
+function showStatFloats(d) {
+  if (!d || !d.length) return;
+  d.forEach((item, idx) => {
+    const statIdx = STATS.indexOf(item.k);
+    let targetEl = null;
+    if (statIdx >= 0) {
+      const miniStats = document.querySelectorAll('.mini-stat');
+      if (miniStats && miniStats[statIdx]) {
+        targetEl = miniStats[statIdx];
+      }
+    } else if (item.k === 'money') {
+      targetEl = $('#hud-money');
+    }
+
+    let x = window.innerWidth / 2;
+    let y = 140;
+    if (targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      x = rect.left + rect.width / 2;
+      y = rect.top;
+      targetEl.classList.remove('stat-flash');
+      void targetEl.offsetWidth;
+      targetEl.classList.add('stat-flash');
+    }
+
+    const floatEl = document.createElement('div');
+    const isUp = item.v > 0;
+    const sign = isUp ? '+' : '';
+    const unit = item.k === 'money' ? '万' : '';
+    const icon = STAT_ICON[item.k] || (item.k === 'money' ? '💰' : '');
+
+    floatEl.className = `stat-float-pop ${item.k} ${isUp ? 'up' : 'down'}`;
+    floatEl.innerHTML = `<i>${icon}</i><span>${sign}${item.v}${unit}</span>`;
+
+    floatEl.style.left = `${x + (idx - (d.length - 1) / 2) * 22}px`;
+    floatEl.style.top = `${y}px`;
+    floatEl.style.animationDelay = `${idx * 70}ms`;
+
+    document.body.appendChild(floatEl);
+    setTimeout(() => floatEl.remove(), 1400);
+  });
+}
+
 function toast(text, d) {
   const t = $('#toast');
-  t.innerHTML = `<span>${text}</span>${d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}`;
+  t.innerHTML = `<span>${text}</span>${d && d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}`;
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  if (d && d.length) showStatFloats(d);
 }
 
 const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -4503,9 +4548,12 @@ function showEnd() {
   document.body.dataset.stage = 'end';
   $('#end-name').textContent = S.gen > 1 ? `${S.name}（第${S.gen}世代）` : S.name;
   $('#end-span').textContent = `享年 ${S.age}歳 ｜ 死因：${S.cause}`;
-  $('#end-rank').textContent = e.rank;
+  const rankLower = (e.rank || 'c').toLowerCase();
+  const rankSubMap = { s: 'LEGEND', a: 'GREAT', b: 'GOOD', c: 'NORMAL', d: 'HARD' };
+  $('#end-rank').className = `rank rank-${rankLower}`;
+  $('#end-rank').innerHTML = `<span class="rank-letter">${e.rank}</span><span class="rank-sub">${rankSubMap[rankLower] || ''}</span>`;
   $('#end-title').textContent = e.title;
-  $('#end-score').textContent = `SCORE ${e.score}`;
+  $('#end-score').innerHTML = `<span class="score-label">SCORE</span><b class="score-num">${e.score.toLocaleString()}</b>`;
   const finalEdu = formatEduString();
   const stats = [
     ['平均幸福度', e.avg], ['最終総資産', fmtMoney(e.wealth)], ['学歴', finalEdu],
@@ -5101,3 +5149,9 @@ renderBest();
 updateResumeBtn();
 showScreen('screen-start');
 
+window.__getS = () => S;
+window.__setS = v => { S = v; };
+window.showEnd = showEnd;
+window.showScreen = showScreen;
+window.renderHud = renderHud;
+window.showStatFloats = showStatFloats;
