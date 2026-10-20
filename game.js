@@ -3768,7 +3768,7 @@ function renderAll() {
       <div class="stat-card ${k}">
         <div class="stat-head">
           <span class="stat-name">${STAT_ICON[k]} ${LABEL[k]}</span>
-          <span class="stat-level-badge ${lvl.cls}">${lvl.label}</span>
+          <span class="stat-level-badge ${k} ${lvl.cls}">${lvl.label}</span>
           <b class="stat-num">${S[k]}</b>
         </div>
         <div class="bar"><div class="bar-fill ${k} ${S[k] < 20 ? 'low' : ''}" style="width:${S[k]}%"></div></div>
@@ -3914,8 +3914,8 @@ function renderActions(force = false) {
     b.style.animationDelay = `${i * 40}ms`;
     b.disabled = busy;
     const descHtml = a.desc.includes(' ')
-      ? a.desc.split(' ').map(p => `<span class="ib">${p}</span>`).join(' ')
-      : a.desc;
+      ? a.desc.split(' ').map(p => `<span class="ib">${highlightStatText(escapeHtml(p))}</span>`).join(' ')
+      : highlightStatText(escapeHtml(a.desc));
     b.innerHTML = `<span class="a-key">${i + 1}</span><span class="a-icon">${a.icon}</span><span class="a-label">${a.label}</span><span class="a-desc">${descHtml}</span>`;
     b.onclick = () => { b.blur(); doAction(a); };
     box.appendChild(b);
@@ -4022,6 +4022,18 @@ function toast(text, d) {
 
 const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 
+function highlightStatText(text) {
+  if (!text) return '';
+  const str = String(text);
+  return str
+    .replace(/(知力[↑↓+\-0-9万%億〜~]*)/g, '<span class="stat-tag smarts">$1</span>')
+    .replace(/(体力[↑↓+\-0-9万%億〜~]*)/g, '<span class="stat-tag fitness">$1</span>')
+    .replace(/(社交[↑↓+\-0-9万%億〜~]*)/g, '<span class="stat-tag social">$1</span>')
+    .replace(/(創造(?:性)?[↑↓+\-0-9万%億〜~]*)/g, '<span class="stat-tag creativity">$1</span>')
+    .replace(/(幸福(?:度)?[↑↓+\-0-9万%億〜~]*)/g, '<span class="stat-tag happy">$1</span>')
+    .replace(/((?:貯金|資産|年収|費用|給与)[↑↓+\-0-9万%億〜~]*)/g, '<span class="stat-tag money">$1</span>');
+}
+
 function formatChoiceSub(text) {
   if (!text) return '';
   const tokens = String(text).split(/([｜|―])/);
@@ -4030,10 +4042,12 @@ function formatChoiceSub(text) {
     if (trimmed === '｜' || trimmed === '|' || trimmed === '―') {
       return `<span class="choice-sep">${trimmed}</span>`;
     }
-    if (trimmed.length > 0 && trimmed.length <= 14) {
-      return `<span class="ib">${escapeHtml(trimmed)}</span>`;
+    const escaped = escapeHtml(trimmed);
+    const highlighted = highlightStatText(escaped);
+    if (trimmed.length > 0 && trimmed.length <= 18) {
+      return `<span class="ib">${highlighted}</span>`;
     }
-    return trimmed ? escapeHtml(trimmed) : '';
+    return highlighted;
   }).filter(Boolean).join(' ');
 }
 

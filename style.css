@@ -375,31 +375,87 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: .02em;
+  white-space: nowrap;
+  transition: all .2s;
 }
-.stat-level-badge.top {
-  background: rgba(234, 179, 8, .2);
-  border: 1px solid #eab308;
-  color: #fde047;
-}
-.stat-level-badge.high {
-  background: rgba(59, 130, 246, .2);
-  border: 1px solid #3b82f6;
+/* 能力水準バッジ：能力（知力・体力・社交・創造・幸福）自体のテーマカラーに完全統一 */
+.stat-level-badge.smarts {
+  background: rgba(96, 165, 250, .18);
+  border: 1px solid var(--c-smarts);
   color: #93c5fd;
 }
-.stat-level-badge.mid {
-  background: rgba(16, 185, 129, .2);
-  border: 1px solid #10b981;
+.stat-level-badge.fitness {
+  background: rgba(52, 211, 153, .18);
+  border: 1px solid var(--c-fitness);
   color: #6ee7b7;
 }
-.stat-level-badge.normal {
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .15);
-  color: var(--muted);
+.stat-level-badge.social {
+  background: rgba(244, 114, 182, .18);
+  border: 1px solid var(--c-social);
+  color: #fbcfe8;
 }
+.stat-level-badge.creativity {
+  background: rgba(192, 132, 252, .18);
+  border: 1px solid var(--c-creativity);
+  color: #e9d5ff;
+}
+.stat-level-badge.happy {
+  background: rgba(251, 191, 36, .18);
+  border: 1px solid var(--c-happy);
+  color: #fde68a;
+}
+/* 最上位水準（85以上）のときは特別にネオン発光 */
+.stat-level-badge.top {
+  box-shadow: 0 0 10px -2px currentColor;
+  font-weight: 700;
+  filter: brightness(1.15);
+}
+/* 低調（30未満）のときは点線ボーダーで注意喚起 */
 .stat-level-badge.low {
-  background: rgba(239, 68, 68, .2);
-  border: 1px solid #ef4444;
-  color: #fca5a5;
+  opacity: .8;
+  border-style: dashed;
+}
+
+/* 選択肢内のステータス変動タグ（色分け） */
+.stat-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: .88em;
+  line-height: 1.25;
+  margin: 0 1px;
+  white-space: nowrap;
+}
+.stat-tag.smarts {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, .18);
+  border: 1px solid rgba(96, 165, 250, .35);
+}
+.stat-tag.fitness {
+  color: #6ee7b7;
+  background: rgba(52, 211, 153, .18);
+  border: 1px solid rgba(52, 211, 153, .35);
+}
+.stat-tag.social {
+  color: #fbcfe8;
+  background: rgba(244, 114, 182, .18);
+  border: 1px solid rgba(244, 114, 182, .35);
+}
+.stat-tag.creativity {
+  color: #e9d5ff;
+  background: rgba(192, 132, 252, .18);
+  border: 1px solid rgba(192, 132, 252, .35);
+}
+.stat-tag.happy {
+  color: #fde68a;
+  background: rgba(251, 191, 36, .18);
+  border: 1px solid rgba(251, 191, 36, .35);
+}
+.stat-tag.money {
+  color: #fef08a;
+  background: rgba(234, 179, 8, .18);
+  border: 1px solid rgba(234, 179, 8, .35);
 }
 .stat-num {
   font-family: var(--font-en);
