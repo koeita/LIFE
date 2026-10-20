@@ -1148,6 +1148,21 @@ body:has(#modal:not([hidden])) {
   margin: 1px;
 }
 
+/* モーダル表示中はトーストの被りを完全防止 */
+body.modal-open #toast,
+body:has(#modal:not([hidden])) #toast {
+  display: none !important;
+}
+
+.chip.snap-chip {
+  background: rgba(245, 158, 11, .2);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, .55);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* ===== トースト ===== */
 .toast {
   position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 30px); opacity: 0; z-index: 60;

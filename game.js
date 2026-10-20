@@ -419,7 +419,12 @@ function addAlbumSnap(snap) {
     tag: snap.tag || 'メモリアル',
   };
   S.album.push(entry);
-  toast(`📸 アルバムにスナップ「${snap.title}」を記録！`, []);
+  const isModalActive = document.body.classList.contains('modal-open') || !$('#modal')?.hidden;
+  if (isModalActive) {
+    S._pendingSnap = entry;
+  } else {
+    toast(`📸 アルバムにスナップ「${snap.title}」を記録！`, []);
+  }
   updateAlbumBadge();
 }
 
@@ -5417,6 +5422,9 @@ function closeModal() {
   modal.hidden = true;
   modal.onclick = null;
   document.body.classList.remove('modal-open');
+  if (S && S._pendingSnap) {
+    delete S._pendingSnap;
+  }
 }
 
 // ---------- モーダル ----------
@@ -5503,7 +5511,12 @@ function runEvent(ev) {
         $('#modal-title').textContent = ev.title;
         textEl.classList.remove('is-html');
         textEl.textContent = res.text || '';
-        $('#modal-chips').innerHTML = chipsHTML(d);
+        let cHtml = chipsHTML(d);
+        if (S && S._pendingSnap) {
+          cHtml += `<span class="chip snap-chip">📸 スナップ「${escapeHtml(S._pendingSnap.title)}」</span>`;
+          delete S._pendingSnap;
+        }
+        $('#modal-chips').innerHTML = cHtml;
         box.innerHTML = '';
         const nb = document.createElement('button');
         nb.className = 'choice primary';
