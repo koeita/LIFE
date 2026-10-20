@@ -5306,48 +5306,76 @@ function showStatFloats(d) {
   });
 }
 
-function toast(text, d = [], manualDismiss = false) {
-  return new Promise(resolve => {
-    const t = $('#toast');
-    if (!t) { resolve(); return; }
-    
-    t.innerHTML = `
-      <div class="toast-main">
-        <span class="toast-msg">${text}</span>
-        ${d && d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}
-      </div>
-      <button type="button" class="toast-close-btn" title="閉じる">✕</button>
-    `;
-    t.classList.add('show');
-    if (d && d.length) showStatFloats(d);
+let bgDismissHandler = null;
 
-    let closed = false;
-    const closeToast = () => {
-      if (closed) return;
-      closed = true;
-      t.classList.remove('show');
-      t.onclick = null;
+function clearBackgroundDismiss() {
+  if (bgDismissHandler) {
+    document.removeEventListener('pointerdown', bgDismissHandler, true);
+    bgDismissHandler = null;
+  }
+}
+
+function hideToast() {
+  clearBackgroundDismiss();
+  const t = $('#toast');
+  if (t) {
+    t.classList.remove('show');
+    t.onclick = null;
+  }
+}
+
+function toast(text, d = []) {
+  const t = $('#toast');
+  if (!t) return;
+
+  hideToast();
+
+  t.innerHTML = `
+    <div class="toast-main">
+      <span class="toast-msg">${text}</span>
+      ${d && d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}
+    </div>
+  `;
+  t.classList.add('show');
+  if (d && d.length) showStatFloats(d);
+
+  // トースト自体をタップしてもサッと消せる
+  t.onclick = (e) => {
+    e.stopPropagation();
+    hideToast();
+  };
+}
+
+function waitForScreenTapOrDismiss() {
+  clearBackgroundDismiss();
+  return new Promise(resolve => {
+    const onScreenTap = (e) => {
+      clearBackgroundDismiss();
+      hideToast();
       resolve();
     };
-
-    const closeBtn = t.querySelector('.toast-close-btn');
-    if (closeBtn) {
-      closeBtn.onclick = (e) => {
-        e.stopPropagation();
-        playSE('click');
-        closeToast();
-      };
-    }
-    t.onclick = () => {
-      playSE('click');
-      closeToast();
-    };
-
-    clearTimeout(toastTimer);
-    if (!manualDismiss) {
-      toastTimer = setTimeout(closeToast, 2800);
-    }
+    bgDismissHandler = onScreenTap;
+    // 直前のカード操作の直後すぐに誤爆しないよう80ms後にリスナーを登録
+    setTimeout(() => {
+      if (bgDismissHandler === onScreenTap) {
+        document.addEventListener('pointerdown', onScreenTap, true);
+      }
+    }, 80);
   });
+}
+
+function setupBackgroundDismissForToast() {
+  clearBackgroundDismiss();
+  const onScreenTap = (e) => {
+    clearBackgroundDismiss();
+    hideToast();
+  };
+  bgDismissHandler = onScreenTap;
+  setTimeout(() => {
+    if (bgDismissHandler === onScreenTap) {
+      document.addEventListener('pointerdown', onScreenTap, true);
+    }
+  }, 80);
 }
 
 const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -5710,32 +5738,40 @@ async function doAction(act) {
   addLog(act.icon, res.text, d);
   renderAll(); // リアルタイム自動セーブ（S.turnActed = true が確実に保持される）
 
-  // 行動結果トーストを表示（手動で「✕」ボタンを押すまで待機してじっくり読ませる）
-  await toast(res.text, d, true);
+  // 行動結果トーストを表示（✕ボタンなし・自動で消えない）
+  toast(res.text, d);
+
+  // 次に発生するイベントを判定
+  const events = [];
+  if (res.then) events.push(res.then);
+  const ms = milestone(S.age);
+  if (ms) events.push(ms);
+  const kms = checkKidMilestone();
+  if (kms) events.push(kms);
+
+  const wev = pickWorldEvent();
+  if (wev) {
+    events.push(wev);
+  } else if (S.age >= 3 && chance(0.6)) {
+    const ev = pickEvent();
+    if (ev) events.push(ev);
+  }
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const triggerEvent = async (ev) => {
     if (!ev) return;
-    await sleep(200);
+    await sleep(150);
     playSE('event');
     await runEvent(ev);
   };
 
-  if (res.then) await triggerEvent(res.then);
-  S.pendingActionId = null;
-  const ms = milestone(S.age);
-  if (ms) await triggerEvent(ms);
-  const kms = checkKidMilestone();
-  if (kms) await triggerEvent(kms);
-
-  // ワールドイベント（社会・世界トレンド）判定
-  const wev = pickWorldEvent();
-  if (wev) {
-    await triggerEvent(wev);
-  } else if (S.age >= 3 && chance(0.6)) {
-    // 通常のランダム個人イベント
-    const ev = pickEvent();
-    if (ev) await triggerEvent(ev);
+  if (events.length > 0) {
+    // 【イベントがある場合】
+    // トーストをじっくり読んだ後、画面上のどこでもタップするとトーストが消えてイベントが表示される！
+    await waitForScreenTapOrDismiss();
+    for (const ev of events) {
+      await triggerEvent(ev);
+    }
   }
 
   const dead = yearEnd();
@@ -5743,6 +5779,13 @@ async function doAction(act) {
   S.pendingActionId = null;
   busy = false;
   renderAll();
+
+  if (events.length === 0) {
+    // 【イベントがない場合】
+    // トーストを表示したままでもカードを押せる！
+    // かつ画面上のどこかをタップすればトーストが消えるリスナーをセット
+    setupBackgroundDismissForToast();
+  }
 
   if (dead) {
     busy = true;
