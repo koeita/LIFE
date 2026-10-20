@@ -4409,21 +4409,34 @@ async function doAction(act) {
   toast(res.text, d);
   renderAll();
 
-  if (res.then) { playSE('event'); await runEvent(res.then); }
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let waited = false;
+  const triggerEvent = async (ev) => {
+    if (!ev) return;
+    if (!waited) {
+      waited = true;
+      // 直前の行動でステータス変動がある場合は、フロート演出を見届けるため750ms待機
+      if (d && d.length > 0) await sleep(750);
+      else await sleep(350);
+    }
+    playSE('event');
+    await runEvent(ev);
+  };
+
+  if (res.then) await triggerEvent(res.then);
   const ms = milestone(S.age);
-  if (ms) { playSE('event'); await runEvent(ms); }
+  if (ms) await triggerEvent(ms);
   const kms = checkKidMilestone();
-  if (kms) { playSE('event'); await runEvent(kms); }
+  if (kms) await triggerEvent(kms);
 
   // ワールドイベント（社会・世界トレンド）判定
   const wev = pickWorldEvent();
   if (wev) {
-    playSE('event');
-    await runEvent(wev);
+    await triggerEvent(wev);
   } else if (S.age >= 3 && chance(0.6)) {
     // 通常のランダム個人イベント
     const ev = pickEvent();
-    if (ev) { playSE('event'); await runEvent(ev); }
+    if (ev) await triggerEvent(ev);
   }
 
   const dead = yearEnd();
@@ -4434,6 +4447,7 @@ async function doAction(act) {
     busy = true;
     renderActions();
     renderLifeMenu();
+    await sleep(600);
     playSE('bad');
     await runEvent({
       icon: '🕊️', title: '人生の終わり',
