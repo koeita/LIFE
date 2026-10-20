@@ -3716,11 +3716,64 @@ function renderAll() {
       </div>`).join('');
   }
 
-  $('#stats').innerHTML = STATS.map(k => `
-    <div>
-      <div class="stat-head"><span>${STAT_ICON[k]} ${LABEL[k]}</span><b>${S[k]}</b></div>
-      <div class="bar"><div class="bar-fill ${k} ${S[k] < 20 ? 'low' : ''}" style="width:${S[k]}%"></div></div>
-    </div>`).join('');
+  const STAT_LEVELS = {
+    smarts: [
+      { min: 85, label: '天才・学者級', cls: 'top' },
+      { min: 70, label: '難関大・エリート', cls: 'high' },
+      { min: 50, label: '優秀・聡明', cls: 'mid' },
+      { min: 30, label: '人並み・標準', cls: 'normal' },
+      { min: 0,  label: '勉強不足・苦手', cls: 'low' },
+    ],
+    fitness: [
+      { min: 85, label: 'アスリート級', cls: 'top' },
+      { min: 70, label: '強靭・タフネス', cls: 'high' },
+      { min: 50, label: '健康優良・元気', cls: 'mid' },
+      { min: 30, label: '人並み・標準', cls: 'normal' },
+      { min: 0,  label: '疲労蓄積・低調', cls: 'low' },
+    ],
+    social: [
+      { min: 85, label: '圧倒的カリスマ', cls: 'top' },
+      { min: 70, label: '人望厚い人気者', cls: 'high' },
+      { min: 50, label: '良好なコミュ力', cls: 'mid' },
+      { min: 30, label: '人並み・標準', cls: 'normal' },
+      { min: 0,  label: '対人関係に悩み', cls: 'low' },
+    ],
+    creativity: [
+      { min: 85, label: '鬼才クリエイター', cls: 'top' },
+      { min: 70, label: '豊かな表現力', cls: 'high' },
+      { min: 50, label: 'アイデアマン', cls: 'mid' },
+      { min: 30, label: '人並み・標準', cls: 'normal' },
+      { min: 0,  label: '発想に悩み中', cls: 'low' },
+    ],
+    happy: [
+      { min: 85, label: 'この上ない幸福', cls: 'top' },
+      { min: 70, label: '充実・多幸感', cls: 'high' },
+      { min: 50, label: '穏やかで満足', cls: 'mid' },
+      { min: 30, label: '波のある日常', cls: 'normal' },
+      { min: 0,  label: '限界・ストレス', cls: 'low' },
+    ],
+  };
+
+  const getStatLevel = (key, val) => {
+    const list = STAT_LEVELS[key] || [];
+    for (const item of list) {
+      if (val >= item.min) return item;
+    }
+    return { label: '標準', cls: 'normal' };
+  };
+
+  $('#stats').innerHTML = STATS.map(k => {
+    const lvl = getStatLevel(k, S[k]);
+    return `
+      <div class="stat-card ${k}">
+        <div class="stat-head">
+          <span class="stat-name">${STAT_ICON[k]} ${LABEL[k]}</span>
+          <span class="stat-level-badge ${lvl.cls}">${lvl.label}</span>
+          <b class="stat-num">${S[k]}</b>
+        </div>
+        <div class="bar"><div class="bar-fill ${k} ${S[k] < 20 ? 'low' : ''}" style="width:${S[k]}%"></div></div>
+      </div>`;
+  }).join('');
 
   const finalEduText = formatEduString();
   const partner = S.married
@@ -3871,13 +3924,25 @@ function renderActions(force = false) {
 
 function renderLifeMenu() {
   const wrap = $('#life-menu-wrap');
+  const banner = $('#life-menu-banner');
   const box = $('#life-menu');
   if (!wrap || !box) return;
   if (!S || S.age < 15) {
     wrap.hidden = true;
+    if (banner) banner.hidden = true;
     return;
   }
   wrap.hidden = false;
+  if (banner) {
+    banner.hidden = false;
+    const jumpBtn = $('#btn-jump-life-menu');
+    if (jumpBtn && !jumpBtn.dataset.bound) {
+      jumpBtn.dataset.bound = 'true';
+      jumpBtn.onclick = () => {
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    }
+  }
   box.innerHTML = '';
 
   const menus = [
