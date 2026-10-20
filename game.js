@@ -518,6 +518,8 @@ function ensureState(s) {
   if (typeof s.actedLifestyleYear !== 'number') s.actedLifestyleYear = 0;
   if (!s.club) s.club = null;
   if (!s.hsActivity) s.hsActivity = null;
+  if (typeof s.turnActed !== 'boolean') s.turnActed = false;
+  if (!s.pendingActionId) s.pendingActionId = null;
   // 旧ステータス(health, looks)からの移行
   if (typeof s.fitness !== 'number') s.fitness = typeof s.health === 'number' ? s.health : 60;
   if (typeof s.social !== 'number') s.social = typeof s.looks === 'number' ? s.looks : 50;
@@ -5645,13 +5647,21 @@ async function doAction(act) {
   renderActions();
   renderLifeMenu();
 
+  // 行動選択済みフラグと保留中イベントの記録（リロード時の不正やり直し防止）
+  S.turnActed = true;
+  if (act.label === '転職活動' || act.label === '就職活動') {
+    S.pendingActionId = 'jobHunt';
+  } else {
+    S.pendingActionId = null;
+  }
+
   const before = snap();
   let res = act.fn();
   if (typeof res === 'string') res = { text: res };
   const d = diff(before);
   addLog(act.icon, res.text, d);
   toast(res.text, d);
-  renderAll();
+  renderAll(); // リアルタイム自動セーブ（S.turnActed = true が確実に保持される）
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   let waited = false;
@@ -5668,6 +5678,7 @@ async function doAction(act) {
   };
 
   if (res.then) await triggerEvent(res.then);
+  S.pendingActionId = null;
   const ms = milestone(S.age);
   if (ms) await triggerEvent(ms);
   const kms = checkKidMilestone();
@@ -5684,6 +5695,8 @@ async function doAction(act) {
   }
 
   const dead = yearEnd();
+  S.turnActed = false;
+  S.pendingActionId = null;
   busy = false;
   renderAll();
 
@@ -6194,6 +6207,15 @@ async function openCollectionModal() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   window.scrollTo(0, 0);
+  try {
+    if (id === 'screen-game') {
+      localStorage.setItem('life_sim_active_screen', 'game');
+    } else if (id === 'screen-start') {
+      localStorage.setItem('life_sim_active_screen', 'start');
+    } else if (id === 'screen-end') {
+      localStorage.removeItem('life_sim_active_screen');
+    }
+  } catch (e) {}
 }
 
 function renderBest() {
@@ -6335,18 +6357,66 @@ function updateResumeBtn() {
   }
 }
 
-function resumeGame() {
+async function checkPendingTurn() {
+  if (!S || !S.turnActed) return;
+  busy = true;
+  renderActions();
+  renderLifeMenu();
+
+  const pendingId = S.pendingActionId;
+  S.pendingActionId = null;
+
+  if (pendingId === 'jobHunt') {
+    // 転職・就職活動モーダルを復帰（カードの選び直しは不可）
+    playSE('event');
+    await runEvent(jobHuntEvent());
+  }
+
+  const ms = milestone(S.age);
+  if (ms) await runEvent(ms);
+  const kms = checkKidMilestone();
+  if (kms) await runEvent(kms);
+
+  const dead = yearEnd();
+  S.turnActed = false;
+  S.pendingActionId = null;
+  busy = false;
+  renderAll();
+
+  if (dead) {
+    busy = true;
+    renderActions();
+    renderLifeMenu();
+    playSE('bad');
+    await runEvent({
+      icon: '🕊️', title: '人生の終わり',
+      text: S.cause === '老衰'
+        ? `${S.name}は${S.age}歳で、${S.kids.length || S.married ? '家族に見守られながら' : '穏やかに'}眠るように息を引き取った。`
+        : `${S.name}は${S.age}歳で、${S.cause}によりこの世を去った。`,
+      choices: [{ label: '人生を振り返る', fn: () => '' }],
+    });
+    busy = false;
+    showEnd();
+  }
+}
+
+function resumeGame(auto = false) {
   const data = getSavedGame();
   if (!data) return false;
   try {
-    playSE('click');
+    if (!auto) playSE('click');
     S = ensureState(data);
     busy = false;
     switchTab('action', true);
     rebuildLogs(S.log || []);
     showScreen('screen-game');
     renderAll();
-    toast(`おかえりなさい！ ${S.name}（${S.age}歳）の人生を再開しました`, []);
+    if (!auto) {
+      toast(`おかえりなさい！ ${S.name}（${S.age}歳）の人生を再開しました`, []);
+    }
+    if (S.turnActed) {
+      setTimeout(() => { checkPendingTurn(); }, 150);
+    }
     return true;
   } catch (e) {
     console.error('Failed to resume game', e);
@@ -6451,11 +6521,18 @@ if (modalEl) {
   }, { passive: false });
 }
 
-// 起動時：メインメニューを表示
+// 起動時：プレイ中データがあれば直接ゲームを再開、なければスタート画面
 applyPrefsUI();
 renderBest();
 updateResumeBtn();
-showScreen('screen-start');
+
+const savedGameData = getSavedGame();
+const lastActiveScreen = localStorage.getItem('life_sim_active_screen');
+if (savedGameData && lastActiveScreen !== 'start') {
+  resumeGame(true);
+} else {
+  showScreen('screen-start');
+}
 
 window.__getS = () => S;
 window.__setS = v => { S = v; };
