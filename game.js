@@ -491,11 +491,11 @@ function newLife(name, gender = 'random', orientation = 'hetero') {
   S = ensureState({
     name, gender: finalGender, orientation: finalOrientation,
     age: 0, gen, mbti, traits, family: fam,
-    smarts: clamp(r(25, 48) + (fam === 'rich' ? 6 : 0) + (traits.includes('genius') ? 12 : 0) + bonusStat),
-    fitness: clamp(r(50, 75) + (traits.includes('iron') ? 12 : 0)),
-    social: clamp(r(25, 55) + (traits.includes('charisma') ? 12 : 0) + bonusStat),
-    creativity: clamp(r(25, 55) + (traits.includes('artist') ? 14 : 0)),
-    happy: clamp(r(55, 75) + (traits.includes('optimist') ? 10 : 0)),
+    smarts: clamp(r(20, 36) + (fam === 'rich' ? 4 : 0) + (traits.includes('genius') ? 8 : 0) + bonusStat),
+    fitness: clamp(r(24, 38) + (traits.includes('iron') ? 10 : 0)),
+    social: clamp(r(22, 38) + (traits.includes('charisma') ? 8 : 0) + bonusStat),
+    creativity: clamp(r(22, 38) + (traits.includes('artist') ? 10 : 0)),
+    happy: clamp(r(62, 78) + (traits.includes('optimist') ? 8 : 0)),
     money: initMoney,
     edu: 0, student: false, jh: null, hs: null, track: null, uni: null, uniRank: 0, gradSchool: null, ronin: 0, gradYears: 0,
     job: null, retired: false, sideJob: null,
@@ -582,6 +582,11 @@ function fx(obj) {
       // 性格（MBTI）補正
       if (v > 0 && bias[k]) {
         v = Math.round(v * bias[k]);
+      }
+
+      // 80以上の「プロの壁・伸び悩み（逓減）」: 80を超えると練習によるステータス上昇が緩やかに
+      if (v > 0 && S[k] !== undefined && S[k] >= 80) {
+        v = Math.max(1, Math.floor(v * 0.45));
       }
 
       if (S[k] !== undefined) {
@@ -693,115 +698,129 @@ const ACTIONS = {
       icon: '⚽', label: 'サッカースクールで特訓', desc: '体力↑↑ 運動センス開花',
       cond: () => S.lesson === 'soccer',
       fn() {
-        fx({ fitness: r(4, 7), happy: r(1, 3) });
-        if (!hasTrait('athletic_sense') && chance(0.22 + S.fitness / 250)) {
+        fx({ fitness: r(2, 4), happy: r(1, 2) });
+        S.sportSkill = (S.sportSkill || 0) + 1;
+        if (!hasTrait('athletic_sense') && chance(0.20 + S.fitness / 200)) {
           S.traits.push('athletic_sense');
           playSE('fanfare');
-          return '華麗なドリブルで相手をごぼう抜き！卓越した運動センスに目覚めた！';
+          return '華麗なドリブルで相手をごぼう抜き！卓越した運動センスに目覚めた！（スポーツ基礎 Lv.' + S.sportSkill + '）';
         }
-        return '雨の日も泥だらけになってシュート練習を重ねた！足腰がグングン強くなる！';
+        return '雨の日も泥だらけになってシュート練習を重ねた！足腰が着実に強くなる！（スポーツ基礎 Lv.' + S.sportSkill + '）';
       }
     },
     {
       icon: '🎹', label: 'ピアノの練習・発表会曲', desc: '創造↑↑ 絶対音感開花',
       cond: () => S.lesson === 'piano',
       fn() {
-        fx({ creativity: r(4, 7), smarts: r(1, 3), happy: r(1, 3) });
-        if (!hasTrait('absolute_pitch') && chance(0.22 + S.creativity / 250)) {
+        fx({ creativity: r(2, 4), smarts: r(1, 2), happy: r(1, 2) });
+        S.musicSkill = (S.musicSkill || 0) + 1;
+        if (!hasTrait('absolute_pitch') && chance(0.20 + S.creativity / 200)) {
           S.traits.push('absolute_pitch');
           playSE('fanfare');
-          return '街のクラクションや鳥のさえずりがドレミで聴こえる！「絶対音感」が開花した！';
+          return '街のクラクションや鳥のさえずりがドレミで聴こえる！「絶対音感」が開花した！（音楽基礎 Lv.' + S.musicSkill + '）';
         }
-        return '難しいクラシックの難曲をノーミスで弾ききった！先生からも大絶賛された！';
+        return '難しいクラシックの課題曲をノーミスで弾ききった！先生から絶賛！（音楽基礎 Lv.' + S.musicSkill + '）';
       }
     },
     {
       icon: '💻', label: 'キッズプログラミング', desc: '知力↑↑ ロジカル思考開花',
       cond: () => S.lesson === 'coding',
       fn() {
-        fx({ smarts: r(4, 7), creativity: r(1, 3), happy: r(1, 2) });
-        if (!hasTrait('logical_mind') && chance(0.22 + S.smarts / 250)) {
+        fx({ smarts: r(2, 4), creativity: r(1, 2), happy: r(1, 2) });
+        S.techSkill = (S.techSkill || 0) + 1;
+        if (!hasTrait('logical_mind') && chance(0.20 + S.smarts / 200)) {
           S.traits.push('logical_mind');
           playSE('fanfare');
-          return '複雑なアルゴリズムの仕組みを直感的に理解！「ロジカル思考」が開花した！';
+          return '複雑なアルゴリズムの仕組みを直感的に理解！「ロジカル思考」が開花した！（IT基礎 Lv.' + S.techSkill + '）';
         }
-        return '自作のミニゲームを完成させた！友達に遊んでもらって大好評！';
+        return '自作のミニゲームを完成させた！友達に遊んでもらって大好評！（IT基礎 Lv.' + S.techSkill + '）';
       }
     },
     {
       icon: '🎨', label: '絵画教室で創作', desc: '創造↑↑ 芸術センス開花',
       cond: () => S.lesson === 'art',
       fn() {
-        fx({ creativity: r(4, 7), happy: r(2, 4) });
-        if (!hasTrait('artist') && chance(0.20 + S.creativity / 250)) {
+        fx({ creativity: r(2, 4), happy: r(1, 3) });
+        S.artSkill = (S.artSkill || 0) + 1;
+        if (!hasTrait('artist') && chance(0.18 + S.creativity / 200)) {
           S.traits.push('artist');
           playSE('fanfare');
-          return '豊かな色彩と構図で審査員を唸らせた！「芸術センス」に目覚めた！';
+          return '豊かな色彩と構図で審査員を唸らせた！「芸術センス」に目覚めた！（創作基礎 Lv.' + S.artSkill + '）';
         }
-        return 'キャンバスに思い描いた世界を自由に描き、コンクールに出品した！';
+        return 'キャンバスに思い描いた世界を自由に描き、コンクールに出品した！（創作基礎 Lv.' + S.artSkill + '）';
       }
     },
     {
       icon: '🏕️', label: '仲間と秘密基地づくり', desc: '社交↑↑ 幸福↑↑',
       cond: () => S.lesson === 'free',
       fn() {
-        fx({ social: r(4, 6), happy: r(4, 6) });
+        fx({ social: r(2, 4), happy: r(3, 5) });
         return '裏山に廃材を集めて最高の秘密基地を作った！かけがえのない友情が芽生えた。';
       }
     },
-    { icon: '✏️', label: '勉強する', desc: '知力↑↑ 幸福↓', fn() { fx({ smarts: r(3, 5), happy: -r(0, 2) }); return 'コツコツ勉強に励んだ。'; } },
-    { icon: '🏃', label: '運動する', desc: '体力↑↑ 社交↑', fn() { fx({ fitness: r(3, 5), social: r(0, 2) }); return 'スポーツで汗を流した。'; } },
-    { icon: '🤝', label: '友達と遊ぶ', desc: '社交↑↑ 幸福↑', fn() { fx({ social: r(3, 5), happy: r(2, 4) }); return '友達と毎日のように遊んだ。'; } },
-    { icon: '🎨', label: '工作・読書・創作', desc: '創造↑↑ 知力↑', fn() { fx({ creativity: r(3, 5), smarts: r(1, 2) }); return '自由な発想で創作を楽しんだ。'; } },
-    { icon: '🎮', label: 'ゲームをする', desc: '幸福↑ 体力↓', fn() { fx({ happy: r(2, 4), smarts: r(-1, 1), fitness: -1 }); return 'ゲームに熱中した。'; } },
+    { icon: '✏️', label: '勉強する', desc: '知力↑↑ 幸福↓', fn() { fx({ smarts: r(2, 3), happy: -1 }); return 'コツコツ勉強に励んだ。'; } },
+    { icon: '🏃', label: '運動する', desc: '体力↑↑ 社交↑', fn() { fx({ fitness: r(2, 3), social: r(0, 1) }); return 'スポーツで汗を流した。'; } },
+    { icon: '🤝', label: '友達と遊ぶ', desc: '社交↑↑ 幸福↑', fn() { fx({ social: r(2, 3), happy: r(2, 3) }); return '友達と毎日のように遊んだ。'; } },
+    { icon: '🎨', label: '工作・読書・創作', desc: '創造↑↑ 知力↑', fn() { fx({ creativity: r(2, 3), smarts: 1 }); return '自由な発想で創作を楽しんだ。'; } },
+    { icon: '🎮', label: 'ゲームをする', desc: '幸福↑ 体力↓', fn() { fx({ happy: r(2, 3), smarts: r(-1, 1), fitness: -1 }); return 'ゲームに熱中した。'; } },
   ],
   teen: [
     {
-      icon: '⚽', label: '強豪運動部で猛特訓', desc: '体力↑↑↑ スカウト注目度UP',
+      icon: '⚽', label: '強豪運動部で猛特訓', desc: '体力↑↑ スカウト注目度UP',
       cond: () => S.club === 'sports',
       fn() {
-        fx({ fitness: r(5, 8), social: r(1, 3), happy: r(1, 3) });
-        if (chance(0.25 + S.fitness / 200)) {
+        fx({ fitness: r(3, 5), social: r(1, 2), happy: r(1, 2) });
+        S.sportSkill = (S.sportSkill || 0) + 1;
+        const scoutBonus = S.sportSkill >= 3 ? 0.2 : 0;
+        if (chance(0.18 + S.fitness / 300 + scoutBonus)) {
           S.flags.athlete_star = true;
-          return '県大会で圧巻のスーパープレーを連発！観客を沸かせ、スカウトの目に留まった！';
+          playSE('fanfare');
+          return '県大会で圧巻のスーパープレーを連発！観客を沸かせスカウト評価が急上昇！（部活練度 Lv.' + S.sportSkill + '）';
         }
-        return '朝練から夜遅くまで走り込み！強靭なスタミナと根性が身についた！';
+        return '朝練から居残りまで走り込み！強靭なスタミナと根性が身についた！（部活練度 Lv.' + S.sportSkill + '・スカウト注目度UP）';
       }
     },
     {
-      icon: '🎸', label: '軽音・バンド活動に没頭', desc: '創造↑↑↑ デビューへの道',
+      icon: '🎸', label: '軽音・バンド活動に没頭', desc: '創造↑↑ デビューへの道',
       cond: () => S.club === 'music',
       fn() {
-        fx({ creativity: r(5, 8), social: r(2, 4), happy: r(2, 4) });
-        if (chance(0.25 + S.creativity / 200)) {
+        fx({ creativity: r(3, 5), social: r(1, 3), happy: r(2, 3) });
+        S.musicSkill = (S.musicSkill || 0) + 1;
+        const talentBonus = S.musicSkill >= 3 ? 0.2 : 0;
+        if (chance(0.18 + S.creativity / 300 + talentBonus)) {
           S.flags.music_talent = true;
-          return 'オリジナル曲をライブで初披露！会場中が一体となる熱狂の渦を生み出した！';
+          playSE('fanfare');
+          return 'オリジナル曲をライブで初披露！会場中が一体となる熱狂の渦を生み出した！（音楽練度 Lv.' + S.musicSkill + '）';
         }
-        return 'スタジオに籠もってギターリフとボーカルの練習に明け暮れた！グルーヴが最高潮！';
+        return 'スタジオに籠もってリフとボーカルを徹底練習！新曲のレパートリーが増えた！（音楽練度 Lv.' + S.musicSkill + '）';
       }
     },
     {
-      icon: '💻', label: '自作アプリ・IT開発', desc: '知力↑↑↑ 起業・開発への道',
+      icon: '💻', label: '自作アプリ・IT開発', desc: '知力↑↑ 起業・開発への道',
       cond: () => S.club === 'tech',
       fn() {
-        fx({ smarts: r(5, 8), creativity: r(2, 4) });
-        if (chance(0.25 + S.smarts / 200)) {
+        fx({ smarts: r(3, 5), creativity: r(1, 2) });
+        S.techSkill = (S.techSkill || 0) + 1;
+        if (chance(0.18 + S.smarts / 300 + (S.techSkill >= 3 ? 0.2 : 0))) {
           S.flags.tech_geek = true;
-          return '開発した便利アプリがSNSで大拡散！数万ダウンロードを突破した！';
+          playSE('fanfare');
+          return '開発した便利アプリがSNSで大拡散！数万ダウンロードを突破！（開発練度 Lv.' + S.techSkill + '）';
         }
-        return '最新のプログラミング言語とフレームワークをマスター！動くプロダクトを作り上げた。';
+        return '最新のプログラミング言語をマスターし、Webサービスを形にした！（開発練度 Lv.' + S.techSkill + '）';
       }
     },
     {
-      icon: '🎨', label: '同人誌・イラスト創作', desc: '創造↑↑↑ 幸福↑ クリエイターへの道',
+      icon: '🎨', label: '同人誌・イラスト創作', desc: '創造↑↑ 幸福↑ クリエイターへの道',
       cond: () => S.club === 'art',
       fn() {
-        fx({ creativity: r(5, 8), happy: r(3, 5) });
-        if (chance(0.25 + S.creativity / 200)) {
+        fx({ creativity: r(3, 5), happy: r(2, 3) });
+        S.artSkill = (S.artSkill || 0) + 1;
+        if (chance(0.18 + S.creativity / 300 + (S.artSkill >= 3 ? 0.2 : 0))) {
           S.flags.art_talent = true;
-          return 'ネットに投稿したイラストが何万いいねもバズり、人気クリエイターの仲間入り！';
+          playSE('fanfare');
+          return 'ネットに投稿したイラストが大バズり！人気クリエイターとして認知！（創作練度 Lv.' + S.artSkill + '）';
         }
-        return 'ペンタブを握りしめ、自分だけの世界観を描き殴った！表現の幅が飛躍的に広がった。';
+        return 'ペンタブを握りしめ、自分だけの世界観を描き殴った！（創作練度 Lv.' + S.artSkill + '）';
       }
     },
     { icon: '📖', label: '勉強に打ち込む', desc: '知力↑↑↑ 幸福↓', fn() { fx({ smarts: r(4, 6), happy: -r(1, 3) }); return '机にかじりついて勉強した。'; } },
@@ -1502,7 +1521,7 @@ function milestone(a) {
   // 13歳（中2〜中3）：中学部活・活動の集大成大会
   if (a === 13 && S.student && S.club) {
     if (S.club === 'sports') {
-      const isStar = (S.fitness >= 60 || hasTrait('athletic_sense') || S.flags.sports_regular);
+      const isStar = (S.fitness >= 55 || (S.sportSkill && S.sportSkill >= 2) || hasTrait('athletic_sense') || S.flags.sports_regular);
       return {
         icon: '🏅', title: '中総体・都道府県大会の激闘', badge: '中学生の集大成',
         text: '3年間の汗と涙の結晶。全国につながる大舞台の幕が上がった！',
@@ -1521,7 +1540,7 @@ function milestone(a) {
         }]
       };
     } else if (S.club === 'music') {
-      const isMusician = (S.creativity >= 60 || hasTrait('absolute_pitch') || S.flags.music_talent);
+      const isMusician = (S.creativity >= 55 || (S.musicSkill && S.musicSkill >= 2) || hasTrait('absolute_pitch') || S.flags.music_talent);
       return {
         icon: '🎺', title: '全日本コンクール ＆ 文化祭ライブ', badge: '中学生の集大成',
         text: 'ホールに響く調律の音。全校生徒が詰めかけた文化祭ステージ！',
@@ -1779,7 +1798,8 @@ function milestone(a) {
           sub: '幼少期からの経験で合格率UP｜プロスポーツ選手',
           fn() {
             S.student = false; S.edu = 2;
-            const bonusRate = (S.lesson === 'soccer' ? 0.15 : 0) + (S.flags.athlete_star ? 0.2 : 0) + (hasTrait('athletic_sense') ? 0.2 : 0) + (hasTrait('iron') ? 0.15 : 0);
+            const skillBonus = (S.sportSkill ? Math.min(0.35, S.sportSkill * 0.06) : 0);
+            const bonusRate = (S.lesson === 'soccer' ? 0.15 : 0) + (S.flags.athlete_star ? 0.2 : 0) + (hasTrait('athletic_sense') ? 0.2 : 0) + (hasTrait('iron') ? 0.15 : 0) + skillBonus;
             if (chance(S.fitness / 110 + bonusRate)) {
               setJob({ name: 'プロスポーツ選手', base: 850, icon: '🏅' });
               S.flags.pro = true;
@@ -1816,7 +1836,8 @@ function milestone(a) {
           sub: 'オーディション挑戦 / 下積みインディーズ',
           fn() {
             S.student = false; S.edu = 2;
-            const rate = (S.creativity / 100) + (hasTrait('absolute_pitch') ? 0.25 : 0) + (hasTrait('artist') ? 0.15 : 0) + (S.flags.music_talent ? 0.2 : 0);
+            const skillBonus = (S.musicSkill ? Math.min(0.35, S.musicSkill * 0.06) : 0);
+            const rate = (S.creativity / 100) + (hasTrait('absolute_pitch') ? 0.25 : 0) + (hasTrait('artist') ? 0.15 : 0) + (S.flags.music_talent ? 0.2 : 0) + skillBonus;
             if (chance(rate)) {
               setJob({ name: 'ミュージシャン', base: 480, icon: '🎸' });
               fx({ happy: 12, social: 5, money: 300 });
@@ -1873,13 +1894,14 @@ function milestone(a) {
         choices: [{
           label: '全国の舞台で全てを出し切る！',
           fn() {
-            if (S.fitness >= 72 || hasTrait('athletic_sense') || hasTrait('iron')) {
+            const skillScore = (S.fitness || 0) + (S.sportSkill ? S.sportSkill * 4 : 0);
+            if (skillScore >= 75 || hasTrait('athletic_sense') || hasTrait('iron')) {
               S.flags.scouted_pro = true;
-              fx({ fitness: 6, happy: 10, social: 5 });
+              fx({ fitness: 4, happy: 10, social: 5 });
               playSE('fanfare');
-              return '全国ベスト4に進出！スポーツ紙の紙面に「ドラフト上位候補」として名前が躍った！';
+              return '全国ベスト4に進出！長年の猛練習が実を結び、「ドラフト上位候補」としてスカウトの目を釘付けにした！';
             }
-            fx({ fitness: 4, happy: 4 });
+            fx({ fitness: 3, happy: 4 });
             return '全国の強豪と死闘を繰り広げ、プロ入りへの手応えと課題を掴んだ！';
           }
         }]
@@ -1891,13 +1913,14 @@ function milestone(a) {
         choices: [{
           label: '全力のシャウトと演奏を叩きつける！',
           fn() {
-            if (S.creativity >= 72 || hasTrait('absolute_pitch') || hasTrait('artist')) {
+            const musicScore = (S.creativity || 0) + (S.musicSkill ? S.musicSkill * 4 : 0);
+            if (musicScore >= 75 || hasTrait('absolute_pitch') || hasTrait('artist')) {
               S.flags.major_debut_offer = true;
-              fx({ creativity: 6, happy: 10, social: 6 });
+              fx({ creativity: 4, happy: 10, social: 6 });
               playSE('fanfare');
-              return 'グランプリを獲得！大手レコード会社のプロデューサーから「メジャーデビューさせたい」と名刺を渡された！';
+              return 'グランプリを獲得！圧倒的な演奏と楽曲の完成度に、大手レコード会社からメジャーデビューを打診された！';
             }
-            fx({ creativity: 4, happy: 5 });
+            fx({ creativity: 3, happy: 5 });
             return '準グランプリを獲得！インディーズレーベルから声がかかり、注目を集めた！';
           }
         }]
