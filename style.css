@@ -29,6 +29,7 @@ body[data-stage="senior"]  { --accent: #fbbf24; --accent2: #fb7185; }
 body[data-stage="end"]     { --accent: #c4b5fd; --accent2: #fde68a; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 
 html, body { height: 100%; }
 
@@ -1495,6 +1496,9 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
 
 
 /* 年間運用成果サマリーバナー */
+.invest-summary-banner[hidden] {
+  display: none !important;
+}
 .invest-summary-banner {
   display: flex;
   align-items: center;

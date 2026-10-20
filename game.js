@@ -4828,6 +4828,7 @@ function renderActions(force = false) {
       const details = [stockText, estateText].filter(Boolean).join(' ｜ ');
 
       investBanner.hidden = false;
+      investBanner.style.display = 'flex';
       investBanner.innerHTML = `
         <span class="isb-tag">📈 運用成果</span>
         <span class="isb-total ${totalCls}">年間損益: <b>${totalSign}${fmtMoney(isum.total)}</b></span>
@@ -4835,6 +4836,8 @@ function renderActions(force = false) {
       `;
     } else {
       investBanner.hidden = true;
+      investBanner.style.display = 'none';
+      investBanner.innerHTML = '';
     }
   }
 
