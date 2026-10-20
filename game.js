@@ -825,32 +825,93 @@ const ACTIONS = {
   ],
   worker: [
     {
-      icon: '🔥', label: '仕事に励む', desc: '昇進・昇給のチャンス', fn() {
-        fx({ fitness: -r(1, 3), happy: -r(0, 2) });
+      icon: '🔥', label: '仕事に励む', desc: '昇進・昇給のチャンス｜体力消費', fn() {
+        // 激務による体力と幸福のコスト
+        fx({ fitness: -r(2, 4), happy: -r(1, 2) });
+
+        // 過労リスク：体力が30未満で無理して働くと体調不良・医療費
+        if (S.fitness < 30 && chance(0.35)) {
+          fx({ fitness: -r(5, 8), happy: -6, money: -25 });
+          playSE('bad');
+          return '激務がたたり過労でダウン…！通院と療養を余儀なくされた。（医療費 -25万円）';
+        }
+
         const j = S.job;
+
+        // 起業家（上限5,000万円、成長率は12〜15%に抑制）
         if (j.name === '起業家') {
-          if (chance(0.22 + (hasTrait('merchant') ? 0.1 : 0) + S.social / 400)) { j.base = Math.round(j.base * 1.3); fx({ happy: 5 }); playSE('fanfare'); return '事業が急成長した！'; }
-          if (chance(0.1)) { j.base = Math.round(j.base * 0.75); fx({ happy: -4 }); return '業績が悪化してしまった…'; }
+          const cap = 5000;
+          if (j.base < cap && chance(0.18 + (hasTrait('merchant') ? 0.08 : 0) + S.social / 500)) {
+            const rate = j.base > 2000 ? 1.08 : 1.14;
+            j.base = Math.min(cap, Math.round(j.base * rate));
+            fx({ happy: 4 });
+            playSE('fanfare');
+            return '新規事業が軌道に乗り、着実に業績を伸ばした！';
+          }
+          if (chance(0.08)) {
+            j.base = Math.max(200, Math.round(j.base * 0.88));
+            fx({ happy: -3 });
+            return '市場環境の変化により業績がやや落ち込んだ…';
+          }
           return '会社経営に全力を注いだ。';
         }
+
+        // 動画配信者（上限3,000万円）
         if (j.name === '動画配信者') {
-          if (chance(0.22 + S.creativity / 300 + (hasTrait('charisma') ? 0.15 : 0))) { j.base = Math.round(j.base * 1.28); fx({ happy: 6, creativity: 2 }); playSE('fanfare'); return '動画が大バズりして登録者急増！収入が大幅アップした！'; }
-          return '毎日企画を考えて動画投稿を続けた。';
+          const cap = 3000;
+          if (j.base < cap && chance(0.18 + S.creativity / 400 + (hasTrait('charisma') ? 0.1 : 0))) {
+            const rate = j.base > 1500 ? 1.07 : 1.13;
+            j.base = Math.min(cap, Math.round(j.base * rate));
+            fx({ happy: 5, creativity: 1 });
+            playSE('fanfare');
+            return '企画動画が注目を集め、チャンネル登録者数が増加！';
+          }
+          return '毎日ネタを考えて動画投稿をコツコツ続けた。';
         }
+
+        // ミュージシャン（上限2,800万円）
         if (j.name === 'ミュージシャン') {
-          if (chance(0.25 + S.creativity / 300 + (hasTrait('charisma') ? 0.15 : 0))) { j.base = Math.round(j.base * 1.3); fx({ happy: 7, creativity: 3 }); playSE('fanfare'); return '楽曲がドラマの主題歌に大抜擢！知名度とギャラが一気に跳ね上がった！'; }
-          return 'ライブ活動と楽曲制作に打ち込んだ。';
+          const cap = 2800;
+          if (j.base < cap && chance(0.18 + S.creativity / 400 + (hasTrait('charisma') ? 0.1 : 0))) {
+            const rate = j.base > 1500 ? 1.07 : 1.13;
+            j.base = Math.min(cap, Math.round(j.base * rate));
+            fx({ happy: 5, creativity: 2 });
+            playSE('fanfare');
+            return '新曲が音楽番組の注目曲に選ばれ、知名度とギャラがアップした！';
+          }
+          return 'ライブ活動と地道な曲作りに打ち込んだ。';
         }
+
+        // 小説家・漫画家（上限3,000万円）
         if (j.name === '小説家・漫画家') {
-          if (chance(0.25 + S.creativity / 300 + (hasTrait('artist') ? 0.15 : 0))) { j.base = Math.round(j.base * 1.3); fx({ happy: 7, creativity: 2 }); playSE('fanfare'); return '新作が大ヒットして重版出来！印税が跳ね上がった！'; }
-          return '原稿と向き合い、創作に打ち込んだ。';
+          const cap = 3000;
+          if (j.base < cap && chance(0.20 + S.creativity / 400 + (hasTrait('artist') ? 0.1 : 0))) {
+            const rate = j.base > 1500 ? 1.07 : 1.13;
+            j.base = Math.min(cap, Math.round(j.base * rate));
+            fx({ happy: 5, creativity: 2 });
+            playSE('fanfare');
+            return '連載が好評を博し、単行本の重版が決まった！';
+          }
+          return '原稿と向き合い、執筆に打ち込んだ。';
         }
-        if (j.corp && j.level < 4 && chance(0.1 + (S.smarts + S.social) / 800 + (hasTrait('lucky') ? 0.06 : 0))) {
-          j.level++; fx({ happy: 6 }); if (j.level >= 3) S.flags.executive = true;
+
+        // 一般企業員（昇進ペースの適正化）
+        if (j.corp && j.level < 4 && chance(0.08 + (S.smarts + S.social) / 1000 + (hasTrait('lucky') ? 0.05 : 0))) {
+          j.level++; fx({ happy: 5 }); if (j.level >= 3) S.flags.executive = true;
           playSE('fanfare');
-          return `昇進して${LEVELS[j.level]}になった！`;
+          return `日頃の実績が評価され、昇進して${LEVELS[j.level]}になった！`;
         }
-        if (!j.corp && chance(0.28 + S.creativity / 350)) { j.base = Math.round(j.base * 1.09); fx({ happy: 3 }); return '腕が認められ、収入がアップした！'; }
+
+        // 個人専門職・自由業（上限1,800万円、小幅昇給+4%）
+        if (!j.corp) {
+          const cap = 1800;
+          if (j.base < cap && chance(0.20 + S.creativity / 450)) {
+            j.base = Math.min(cap, Math.round(j.base * 1.04));
+            fx({ happy: 2 });
+            return '確かな仕事ぶりでリピート案件が増加し、少し単価が上がった！';
+          }
+        }
+
         return '仕事に全力を注いだ。';
       }
     },
@@ -4163,26 +4224,33 @@ function yearEnd() {
     estateMaintenance = Math.round(S.assets.estate * (r(2, 4) / 100));
   }
 
-  // 株式投資の変動（資産規模に応じた現実的リターン＆金融所得課税）
+  // 株式投資の変動（好不況サイクル＆信託報酬＆金融所得課税）
   let stockGain = 0;
   if (S.assets.stock > 0) {
     let rate = 0;
-    const isCrash = chance(0.07);
-    const isBoom = chance(0.12);
+    const isCrash = chance(0.11); // 約9年に1度の景気後退・調整局面
+    const isBoom = chance(0.08);  // 約12年に1度の好況・バブル
     if (isCrash) {
-      rate = -r(14, 28);
-      if (hasTrait('lucky')) rate = Math.round(rate * 0.6);
-      if (S.mbti && ['INTJ', 'ISTJ'].includes(S.mbti)) rate = Math.round(rate * 0.7);
+      rate = -r(12, 26);
+      if (hasTrait('lucky')) rate = Math.round(rate * 0.65);
+      if (S.mbti && ['INTJ', 'ISTJ'].includes(S.mbti)) rate = Math.round(rate * 0.75);
     } else if (isBoom) {
-      rate = r(10, 22) + (hasTrait('lucky') ? 4 : 0);
+      rate = r(8, 18) + (hasTrait('lucky') ? 3 : 0);
     } else {
-      rate = r(-8, 12) + Math.floor(S.smarts / 45) + (hasTrait('merchant') ? 2 : 0);
+      // 通常相場（中央値0%近傍、知力や商才でわずかにプラス期待値）
+      rate = r(-9, 8) + Math.floor(S.smarts / 60) + (hasTrait('merchant') ? 1 : 0);
     }
-    // 資産が1億円（10000万）を超える巨大ファンドは市場流動性によりリターンが安定収束（インフレ抑制）
+    // 資産規模によるリターンの安定収束（3000万円以上、1億円以上でスケーリング）
     if (S.assets.stock > 10000) {
-      rate = Math.round(rate * 0.65);
+      rate = Math.round(rate * 0.60);
+    } else if (S.assets.stock > 3000) {
+      rate = Math.round(rate * 0.80);
     }
     let rawGain = Math.round(S.assets.stock * (rate / 100));
+    // 運用管理費用・信託報酬（年0.4%、最低1万円）
+    const trustFee = Math.max(1, Math.round(S.assets.stock * 0.004));
+    rawGain -= trustFee;
+
     // プラス益には金融所得課税20%が適用
     if (rawGain > 0) {
       rawGain = Math.round(rawGain * 0.80);
