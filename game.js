@@ -5301,13 +5301,48 @@ function showStatFloats(d) {
   });
 }
 
-function toast(text, d) {
-  const t = $('#toast');
-  t.innerHTML = `<span>${text}</span>${d && d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}`;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
-  if (d && d.length) showStatFloats(d);
+function toast(text, d = [], manualDismiss = false) {
+  return new Promise(resolve => {
+    const t = $('#toast');
+    if (!t) { resolve(); return; }
+    
+    t.innerHTML = `
+      <div class="toast-main">
+        <span class="toast-msg">${text}</span>
+        ${d && d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}
+      </div>
+      <button type="button" class="toast-close-btn" title="閉じる">✕</button>
+    `;
+    t.classList.add('show');
+    if (d && d.length) showStatFloats(d);
+
+    let closed = false;
+    const closeToast = () => {
+      if (closed) return;
+      closed = true;
+      t.classList.remove('show');
+      t.onclick = null;
+      resolve();
+    };
+
+    const closeBtn = t.querySelector('.toast-close-btn');
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        playSE('click');
+        closeToast();
+      };
+    }
+    t.onclick = () => {
+      playSE('click');
+      closeToast();
+    };
+
+    clearTimeout(toastTimer);
+    if (!manualDismiss) {
+      toastTimer = setTimeout(closeToast, 2800);
+    }
+  });
 }
 
 const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -5660,19 +5695,15 @@ async function doAction(act) {
   if (typeof res === 'string') res = { text: res };
   const d = diff(before);
   addLog(act.icon, res.text, d);
-  toast(res.text, d);
   renderAll(); // リアルタイム自動セーブ（S.turnActed = true が確実に保持される）
 
+  // 行動結果トーストを表示（手動で「✕」ボタンを押すまで待機してじっくり読ませる）
+  await toast(res.text, d, true);
+
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  let waited = false;
   const triggerEvent = async (ev) => {
     if (!ev) return;
-    if (!waited) {
-      waited = true;
-      // 直前の行動でステータス変動がある場合は、フロート演出を見届けるため750ms待機
-      if (d && d.length > 0) await sleep(750);
-      else await sleep(350);
-    }
+    await sleep(200);
     playSE('event');
     await runEvent(ev);
   };
