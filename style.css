@@ -770,19 +770,26 @@ button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
   border-radius: 999px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #0b071e;
-  letter-spacing: .03em;
+  letter-spacing: .02em;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .lmb-txt {
   font-size: .84rem;
   font-weight: 700;
-  letter-spacing: .02em;
+  letter-spacing: .01em;
   text-align: left;
   flex: 1;
-  margin: 0 10px;
+  min-width: 0;
+  margin: 0 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.lmb-sub {
+  font-size: .76rem;
+  opacity: .9;
+  font-weight: 500;
 }
 .lmb-arrow {
   font-size: .74rem;
@@ -1734,8 +1741,10 @@ button, .action, .choice, .life-btn { touch-action: manipulation; -webkit-tap-hi
   .stat-name { font-size: .82rem; }
   .stat-level-badge { font-size: .66rem; padding: 1px 6px; }
   .stat-num { font-size: .95rem; }
-  .life-menu-banner-btn { padding: 6px 10px; }
-  .lmb-txt { font-size: .78rem; margin: 0 6px; }
+  .life-menu-banner-btn { padding: 5px 8px; }
+  .lmb-badge { font-size: .60rem; padding: 1.5px 5px; letter-spacing: 0; }
+  .lmb-txt { font-size: .74rem; margin: 0 4px; letter-spacing: 0; }
+  .lmb-sub { font-size: .68rem; }
   .profile-cards { gap: 10px; }
   .profile-group { padding: 10px 12px; border-radius: 14px; }
   .profile-group-title { font-size: .82rem; margin-bottom: 8px; }
