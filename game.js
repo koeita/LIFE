@@ -805,8 +805,8 @@ const ACTIONS = {
       }
     },
     { icon: '📖', label: '勉強に打ち込む', desc: '知力↑↑↑ 幸福↓', fn() { fx({ smarts: r(4, 6), happy: -r(1, 3) }); return '机にかじりついて勉強した。'; } },
-    { icon: '🏀', label: '部活に燃える', desc: '体力↑↑ 社交↑', cond: () => S.club !== 'sports', fn() { fx({ fitness: r(3, 5), social: r(1, 3), happy: r(1, 2) }); return '部活に青春を捧げた。'; } },
-    { icon: '🎨', label: '創作・趣味を極める', desc: '創造↑↑↑', cond: () => S.club !== 'art' && S.club !== 'music', fn() { fx({ creativity: r(4, 6), happy: r(1, 2) }); return '自分の世界を広げる創作に没頭した。'; } },
+    { icon: '🏀', label: '気軽にスポーツを楽しむ', desc: '体力↑↑ 社交↑', cond: () => !S.club || S.club === 'study', fn() { fx({ fitness: r(3, 5), social: r(1, 3), happy: r(1, 2) }); return '友達と放課後の校庭でスポーツを楽しんだ！'; } },
+    { icon: '🎨', label: '創作・趣味を極める', desc: '創造↑↑↑', cond: () => !S.club || S.club === 'study' || S.club === 'sports', fn() { fx({ creativity: r(4, 6), happy: r(1, 2) }); return '自分の世界を広げる創作に没頭した。'; } },
     { icon: '🤝', label: '仲間と青春を謳歌', desc: '社交↑↑ 幸福↑↑', fn() { fx({ social: r(3, 5), happy: r(4, 6), smarts: -r(0, 2) }); return '友達と最高の思い出を作った。'; } },
     { icon: '🍔', label: 'アルバイト', desc: 'お金↑ 体力↓', cond: () => S.age >= 16, fn() { fx({ money: r(30, 60), fitness: -1, social: 1 }); return 'アルバイトでお小遣いを稼いだ。'; } },
   ],
@@ -1292,68 +1292,159 @@ function payTuition(type = 'uni', rank = 1) {
 }
 
 // ---------- 人生の節目 ----------
+// 習い事選択イベント
+function chooseLessonEvent() {
+  return {
+    icon: '🎨', title: '放課後の習い事選び', badge: '小学校入学',
+    text: 'ピカピカのランドセルを背負って春から小学生！\n放課後の時間を何に使って自分の可能性を伸ばす？',
+    choices: [
+      {
+        label: '⚽ サッカースクール・水泳教室に通う',
+        sub: '体力↑↑｜運動センス開花のチャンス',
+        fn() {
+          S.lesson = 'soccer';
+          fx({ fitness: 5, happy: 2 });
+          return 'ボールを追いかけ、プールで泳ぎ、強い足腰と反射神経を鍛え始めた！';
+        }
+      },
+      {
+        label: '🎹 ピアノ・音楽教室に通う',
+        sub: '創造↑↑ 知力↑｜絶対音感開花のチャンス',
+        fn() {
+          S.lesson = 'piano';
+          fx({ creativity: 5, smarts: 2, happy: 2 });
+          return '鍵盤に触れると澄んだ音が響く！毎日楽しそうにピアノの前に座り始めた。';
+        }
+      },
+      {
+        label: '💻 キッズプログラミング教室に通う',
+        sub: '知力↑↑ 創造↑｜ロジカル思考開花のチャンス',
+        fn() {
+          S.lesson = 'coding';
+          fx({ smarts: 6, creativity: 2, happy: 1 });
+          return '画面の中のパズルやブロックコードを動かせた！論理的な発想に夢中になった！';
+        }
+      },
+      {
+        label: '🎨 お絵かき・造形教室に通う',
+        sub: '創造↑↑ 幸福↑｜芸術センス開花のチャンス',
+        fn() {
+          S.lesson = 'art';
+          fx({ creativity: 6, happy: 3 });
+          return '絵の具と粘土で自由な世界を表現！先生にもその豊かな色彩を褒められた！';
+        }
+      },
+      {
+        label: '🏕️ 習い事はせず、友達と自由に外遊び！',
+        sub: '社交↑↑ 幸福↑↑｜たくましい社会性',
+        fn() {
+          S.lesson = 'free';
+          fx({ social: 6, happy: 5 });
+          return '放課後のチャイムと同時に公園へ直行！泥だらけになって仲間と遊び尽くした！';
+        }
+      }
+    ]
+  };
+}
+
+// 部活動選択イベント
+function chooseClubEvent() {
+  return {
+    icon: '🏫', title: '中学校の部活動選び', badge: '中学校入学',
+    text: '春からいよいよ中学生！\n3年間、放課後の青春のエネルギーを何に捧げる？',
+    choices: [
+      {
+        label: '⚽ 運動部（サッカー/野球/バスケ/陸上）',
+        sub: '体力↑↑ 社交↑｜プロアスリートへの第一歩',
+        fn() {
+          S.club = 'sports';
+          if (S.lesson === 'soccer' || hasTrait('athletic_sense')) {
+            fx({ fitness: 6, social: 3, happy: 4 });
+            S.flags.sports_regular = true;
+            return '小学生からの経験が活き、1年生にして即レギュラー抜擢！チームの中心選手に！';
+          }
+          fx({ fitness: 5, social: 2, happy: 2 });
+          return '先輩たちの迫力に圧倒されつつ、厳しい練習に食らいつき始めた！';
+        }
+      },
+      {
+        label: '🎷 吹奏楽部・軽音楽部（音楽系）',
+        sub: '創造↑↑ 社交↑｜バンド・音楽家への道',
+        fn() {
+          S.club = 'music';
+          if (S.lesson === 'piano' || hasTrait('absolute_pitch')) {
+            fx({ creativity: 6, social: 3, happy: 4 });
+            S.flags.music_talent = true;
+            return '抜群の音感とリズム感で即パートリーダーに指名！周囲の憧れの的に！';
+          }
+          fx({ creativity: 5, happy: 3 });
+          return '初めて持つ楽器のピカピカの輝きに感動！夢中で基礎練習を始めた。';
+        }
+      },
+      {
+        label: '💻 パソコン・科学部（IT系）',
+        sub: '知力↑↑ 創造↑｜エンジニア・起業への道',
+        fn() {
+          S.club = 'tech';
+          if (S.lesson === 'coding' || hasTrait('logical_mind')) {
+            fx({ smarts: 6, creativity: 3, happy: 3 });
+            S.flags.tech_geek = true;
+            return '自作プログラムの腕前を披露し、部内No.1の天才ハッカーとして一目置かれた！';
+          }
+          fx({ smarts: 5, happy: 2 });
+          return '部室のパソコンでプログラミングと電子工作の基礎を学び始めた！';
+        }
+      },
+      {
+        label: '🎨 美術部・文芸同好会（創作系）',
+        sub: '創造↑↑ 幸福↑｜クリエイターへの道',
+        fn() {
+          S.club = 'art';
+          if (S.lesson === 'art' || hasTrait('artist')) {
+            fx({ creativity: 6, happy: 4 });
+            S.flags.art_talent = true;
+            return 'コンクール出品作の下描きを見て顧問の先生が大絶賛！';
+          }
+          fx({ creativity: 5, happy: 2 });
+          return '静かな部室で油絵やデッサンに没頭する心地よい時間を手に入れた。';
+        }
+      },
+      {
+        label: '📖 帰宅部（受験勉強特化・自由時間）',
+        sub: '知力↑↑ 幸福↑｜高校受験対策',
+        fn() {
+          S.club = 'study';
+          fx({ smarts: 6, happy: 3 });
+          return '部活には入らず塾通いに集中！難関高校合格に向けてコツコツと学力を蓄えた！';
+        }
+      }
+    ]
+  };
+}
+
 function milestone(a) {
+  // 5歳（6歳になる春）：小学校入学 ＆ 習い事選び
   if (a === 5) return {
     icon: '🎒', title: '小学校入学', text: 'ピカピカのランドセルを背負って、春から小学生！',
-    choices: [{ label: 'いってきます！', fn() { S.student = true; fx({ happy: 3 }); return '新しい友達がたくさんできた。'; } }]
+    choices: [{
+      label: 'いってきます！',
+      fn() {
+        S.student = true;
+        fx({ happy: 3 });
+        return {
+          text: '新しい友達がたくさんできた。',
+          then: chooseLessonEvent()
+        };
+      }
+    }]
   };
 
-  // 6歳（7歳になる年）：放課後の習い事選び
-  if (a === 6 && S.student && !S.lesson) {
-    return {
-      icon: '🎨', title: '放課後の習い事選び', badge: '7歳',
-      text: '小学校生活にも慣れてきた7歳。\n放課後の時間を何に使って自分の可能性を伸ばす？',
-      choices: [
-        {
-          label: '⚽ サッカースクール・水泳教室に通う',
-          sub: '体力↑↑｜運動センス開花のチャンス',
-          fn() {
-            S.lesson = 'soccer';
-            fx({ fitness: 5, happy: 2 });
-            return 'ボールを追いかけ、プールで泳ぎ、強い足腰と反射神経を鍛え始めた！';
-          }
-        },
-        {
-          label: '🎹 ピアノ・音楽教室に通う',
-          sub: '創造↑↑ 知力↑｜絶対音感開花のチャンス',
-          fn() {
-            S.lesson = 'piano';
-            fx({ creativity: 5, smarts: 2, happy: 2 });
-            return '鍵盤に触れると澄んだ音が響く！毎日楽しそうにピアノの前に座り始めた。';
-          }
-        },
-        {
-          label: '💻 キッズプログラミング教室に通う',
-          sub: '知力↑↑ 創造↑｜ロジカル思考開花のチャンス',
-          fn() {
-            S.lesson = 'coding';
-            fx({ smarts: 6, creativity: 2, happy: 1 });
-            return '画面の中のパズルやブロックコードを動かせた！論理的な発想に夢中になった！';
-          }
-        },
-        {
-          label: '🎨 お絵かき・造形教室に通う',
-          sub: '創造↑↑ 幸福↑｜芸術センス開花のチャンス',
-          fn() {
-            S.lesson = 'art';
-            fx({ creativity: 6, happy: 3 });
-            return '絵の具と粘土で自由な世界を表現！先生にもその豊かな色彩を褒められた！';
-          }
-        },
-        {
-          label: '🏕️ 習い事はせず、友達と自由に外遊び！',
-          sub: '社交↑↑ 幸福↑↑｜たくましい社会性',
-          fn() {
-            S.lesson = 'free';
-            fx({ social: 6, happy: 5 });
-            return '放課後のチャイムと同時に公園へ直行！泥だらけになって仲間と遊び尽くした！';
-          }
-        }
-      ]
-    };
+  // 6歳以降で習い事がまだ未設定の場合のフォールバック
+  if (a >= 6 && a <= 10 && S.student && !S.lesson) {
+    return chooseLessonEvent();
   }
 
-  // 11歳：中学進学（中学受験の選択）
+  // 11歳：中学進学（中学受験の選択 ＆ 合格/進学と同時に部活動選びへ）
   if (a === 11 && S.student) {
     const choices = [];
     JH_SCHOOLS.forEach(sch => {
@@ -1363,7 +1454,10 @@ function milestone(a) {
           fn() {
             S.jh = sch.name;
             fx({ happy: 2 });
-            return '地元の公立中学校に進学した。';
+            return {
+              text: '地元の公立中学校に進学した。',
+              then: chooseClubEvent()
+            };
           }
         });
       } else {
@@ -1377,12 +1471,18 @@ function milestone(a) {
               S.jh = sch.name;
               fx({ happy: 7, smarts: sch.sBonus });
               playSE('fanfare');
-              return `見事合格！${sch.name}に入学した！ ${payTuition('jh', sch.id === 'elite' ? 2 : 1)}`;
+              return {
+                text: `見事合格！${sch.name}に入学した！ ${payTuition('jh', sch.id === 'elite' ? 2 : 1)}`,
+                then: chooseClubEvent()
+              };
             }
             S.jh = '公立中学校';
             fx({ happy: -4 });
             playSE('bad');
-            return '惜しくも不合格…。地元の公立中学校に進学した。';
+            return {
+              text: '惜しくも不合格…。地元の公立中学校に進学した。',
+              then: chooseClubEvent()
+            };
           }
         });
       }
@@ -1394,79 +1494,9 @@ function milestone(a) {
     };
   }
 
-  // 12歳（中1）：部活動選び
-  if (a === 12 && S.student && !S.club) {
-    return {
-      icon: '🏆', title: '中学校の部活動選び', badge: '中1',
-      text: '中学生になった！\n3年間、放課後の青春のエネルギーを何に捧げる？',
-      choices: [
-        {
-          label: '⚽ 運動部（サッカー/野球/バスケ/陸上）',
-          sub: '体力↑↑ 社交↑｜プロアスリートへの第一歩',
-          fn() {
-            S.club = 'sports';
-            if (S.lesson === 'soccer' || hasTrait('athletic_sense')) {
-              fx({ fitness: 6, social: 3, happy: 4 });
-              S.flags.sports_regular = true;
-              return '小学生からの経験が活き、1年生にして即レギュラー抜擢！チームの中心選手に！';
-            }
-            fx({ fitness: 5, social: 2, happy: 2 });
-            return '先輩たちの迫力に圧倒されつつ、厳しい練習に食らいつき始めた！';
-          }
-        },
-        {
-          label: '🎷 吹奏楽部・軽音楽部（音楽系）',
-          sub: '創造↑↑ 社交↑｜バンド・音楽家への道',
-          fn() {
-            S.club = 'music';
-            if (S.lesson === 'piano' || hasTrait('absolute_pitch')) {
-              fx({ creativity: 6, social: 3, happy: 4 });
-              S.flags.music_talent = true;
-              return '抜群の音感とリズム感で即パートリーダーに指名！周囲の憧れの的に！';
-            }
-            fx({ creativity: 5, happy: 3 });
-            return '初めて持つ楽器のピカピカの輝きに感動！夢中で基礎練習を始めた。';
-          }
-        },
-        {
-          label: '💻 パソコン・科学部（IT系）',
-          sub: '知力↑↑ 創造↑｜エンジニア・起業への道',
-          fn() {
-            S.club = 'tech';
-            if (S.lesson === 'coding' || hasTrait('logical_mind')) {
-              fx({ smarts: 6, creativity: 3, happy: 3 });
-              S.flags.tech_geek = true;
-              return '自作プログラムの腕前を披露し、部内No.1の天才ハッカーとして一目置かれた！';
-            }
-            fx({ smarts: 5, happy: 2 });
-            return '部室のパソコンでプログラミングと電子工作の基礎を学び始めた！';
-          }
-        },
-        {
-          label: '🎨 美術部・文芸同好会（創作系）',
-          sub: '創造↑↑ 幸福↑｜クリエイターへの道',
-          fn() {
-            S.club = 'art';
-            if (S.lesson === 'art' || hasTrait('artist')) {
-              fx({ creativity: 6, happy: 4 });
-              S.flags.art_talent = true;
-              return 'コンクール出品作の下描きを見て顧問の先生が大絶賛！';
-            }
-            fx({ creativity: 5, happy: 2 });
-            return '静かな部室で油絵やデッサンに没頭する心地よい時間を手に入れた。';
-          }
-        },
-        {
-          label: '📖 帰宅部（受験勉強特化・自由時間）',
-          sub: '知力↑↑ 幸福↑｜高校受験対策',
-          fn() {
-            S.club = 'study';
-            fx({ smarts: 6, happy: 3 });
-            return '部活には入らず塾通いに集中！難関高校合格に向けてコツコツと学力を蓄えた！';
-          }
-        }
-      ]
-    };
+  // 12歳（中1）時点で部活がまだ未選択の場合のフォールバック
+  if (a >= 12 && a <= 14 && S.student && !S.club) {
+    return chooseClubEvent();
   }
 
   // 13歳（中2〜中3）：中学部活・活動の集大成大会
