@@ -33,6 +33,9 @@
 最新の日付が上になるよう、日別に実装・修正した内容を記録しています。
 
 ### 📅 2026-10-27
+* **リポジトリメタデータの整備 (About / Website / Topics)**:
+  * GitHubリポジトリのAboutにゲームの説明文（Description）およびCloudflare Workersの公開URL（Website: `https://life.xcangcheng.workers.dev/`）を設定。
+  * 関連トピック（`life-simulation`, `browser-game`, `web-game` 等）を設定し発見性を向上。
 * **プロジェクト紹介・公開ドキュメントの整備 (`README.md`)**:
   * ゲームの概要、特徴（才能・MBTI、自由行動、アルバム、コレクション）、画面構成と遊び方、技術スタック、ローカル起動手順をまとめた総合 README を作成。
 * **プロジェクト構成の整備 (`.gitignore`)**:
