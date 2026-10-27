@@ -1,0 +1,70 @@
+# ==========================================
+# LIFE Simulation Project - .gitignore
+# ==========================================
+
+# --- OS 固有ファイル ---
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- エディタ・IDE 関連 ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# --- 一時ファイル・バックアップ ---
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+*.orig
+
+# --- ログファイル ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- 環境変数・機密情報 ---
+.env
+.env.local
+.env.*.local
+
+# --- テスト・自動化スクリプト・生成物 (Python / Playwright等) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+ENV/
+.playwright/
+test-results/
+playwright-report/
+
+# 開発用の一時スクリプトや検証ファイル
+test_*.py
+verify_*.py
+temp_*.py
+scratch_*.py
+create_preview_*.py
