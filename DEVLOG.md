@@ -33,8 +33,8 @@
 最新の日付が上になるよう、日別に実装・修正した内容を記録しています。
 
 ### 📅 2026-10-30
-* **Cloudflareプレビュービルド向けWrangler設定の更新 (`feat/app-icon-and-pwa`)**:
-  * Cloudflare Workers Static Assets形式（`assets: { "directory": "." }`、`compatibility_date: "2024-10-22"`、`previews: {}`）に合わせて `wrangler.json` を更新。プレビュービルド時のエラーを解消。
+* **Cloudflare Workers Buildsデプロイ向け最小構成 `wrangler.toml` の作成 (`feat/app-icon-and-pwa`)**:
+  * Cloudflare Workers Builds で静的サイトをそのまま公開できるよう、最小構成の `wrangler.toml`（`[assets] directory = "."`、`[previews]`、`compatibility_date = "2024-10-20"`）を作成。設定の二重定義を防止するため `wrangler.json` を削除して一本化。
 * **PWA対応およびオリジナルアプリアイコンの実装 (`feat/app-icon-and-pwa`)**:
   * **オリジナルアプリアイコンのデザインと生成・配置**:
     * ゲームの世界観「人生の記録帳・アナログ手帳」に合わせ、深みのあるインクブラック背景に、温かいクリーム色の手帳（年表タイムライン入り）、朱色のしおりリボン、ゴールド＆エメラルドグリーンのクラシック万年筆を配置した高視認性ベクターアイコン (`icon.svg`) を新規デザイン。
