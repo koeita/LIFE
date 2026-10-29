@@ -1,0 +1,39 @@
+{
+  "name": "LIFE — ひとつの人生",
+  "short_name": "LIFE",
+  "description": "1年1ターンで進む人生シミュレーションゲーム。0歳から臨終まで、手帳に綴られるあなただけの生涯記録。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f1ea",
+  "theme_color": "#2c3531",
+  "lang": "ja",
+  "categories": ["games", "simulation", "entertainment"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
