@@ -19,8 +19,9 @@ const STAT_ICON = { smarts: '', fitness: '', social: '', creativity: '', happy: 
 
 function cleanUiText(text) {
   if (!text) return '';
-  return text
-    .replace(/[💰🪙❤️💖💕🎓📚✨🎉🎊🧠💪🤝🎨😊🏠🏡⚡🎲🕊️📸]/gu, '')
+  return String(text)
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
+    .replace(/\s{2,}/g, ' ')
     .trim();
 }
 
@@ -5152,7 +5153,7 @@ function renderActions(force = false) {
       investBanner.hidden = false;
       investBanner.style.display = 'flex';
       investBanner.innerHTML = `
-        <span class="isb-tag">📈 運用成果</span>
+        <span class="isb-tag">運用成果</span>
         <span class="isb-total ${totalCls}">年間損益: <b>${totalSign}${fmtMoney(isum.total)}</b></span>
         ${details ? `<span class="isb-detail">（${details}）</span>` : ''}
       `;
@@ -5215,12 +5216,12 @@ function renderLifeMenu() {
 
   const menus = [
     {
-      icon: '💕', label: '恋愛・家族',
-      sub: S.married ? `配偶者 💖${S.partnerLove}%・子${S.kids.length}人` : S.partner ? `恋人 💖${S.partnerLove}%` : '出会い・デート・結婚',
+      label: '恋愛・家族',
+      sub: S.married ? `配偶者（好感度 ${S.partnerLove}%）・子${S.kids.length}人` : S.partner ? `恋人（好感度 ${S.partnerLove}%）` : '出会い・デート・結婚',
       fn: () => openLoveMenu(),
     },
     {
-      icon: '🌿', label: '趣味・ペット',
+      label: '趣味・ペット',
       sub: hobbySub,
       fn: () => openLifestyleMenu(),
     },
@@ -5228,63 +5229,28 @@ function renderLifeMenu() {
   if (S.age >= 18) {
     const fin = S.assets.stock + S.assets.estate;
     menus.push({
-      icon: '🏦', label: '資産・ショップ',
+      label: '資産・ショップ',
       sub: fin > 0 ? `運用 ${fmtMoney(fin)}` : '住宅・車・投資・買い物',
       fn: () => openAssetMenu(),
     });
     const sideEst = S.sideJob ? calcSideJobIncome(S.sideJob) : 0;
     const sideName = S.sideJob ? (SIDE_JOBS.find(j => j.id === S.sideJob.id)?.name.split(' ')[1] || '副業') : '';
     menus.push({
-      icon: '🚀', label: 'キャリア・起業',
-      sub: S.sideJob ? `${sideName} 約+${fmtMoney(sideEst)}/年` : '副業・転職・起業・選挙',
+      label: 'キャリア・起業',
+      sub: S.sideJob ? `${sideName}（年+${fmtMoney(sideEst)}）｜ 転職・選挙` : '就職・転職・副業・起業',
       fn: () => openCareerMenu(),
     });
   }
 
-  // 既存のボタン要素があれば内容・disabledのみ更新して再生成のチラつきを防ぐ
-  if (box.children.length === menus.length) {
-    [...box.children].forEach((b, i) => {
-      const m = menus[i];
-      b.disabled = busy;
-      const subEl = b.querySelector('.lb-sub');
-      if (subEl && subEl.textContent !== m.sub) subEl.textContent = m.sub;
-      b.onclick = async () => {
-        if (busy) return;
-        b.blur();
-        playSE('click');
-        busy = true;
-        renderActions();
-        renderLifeMenu();
-        await runEvent(m.fn());
-        busy = false;
-        renderAll();
-      };
-    });
-    return;
-  }
-
-  box.innerHTML = '';
   menus.forEach(m => {
     const b = document.createElement('button');
+    b.type = 'button';
     b.className = 'life-btn';
-    b.disabled = busy;
-    b.innerHTML = `<span class="lb-icon">${m.icon}</span><span class="lb-body"><span class="lb-label">${m.label}</span><span class="lb-sub">${m.sub}</span></span>`;
-    b.onclick = async () => {
-      if (busy) return;
-      b.blur();
-      playSE('click');
-      busy = true;
-      renderActions();
-      renderLifeMenu();
-      await runEvent(m.fn());
-      busy = false;
-      renderAll();
-    };
+    b.innerHTML = `<span class="life-btn-title">${cleanUiText(m.label)}</span><span class="life-btn-sub">${cleanUiText(m.sub)}</span>`;
+    b.onclick = () => { playSE('click'); m.fn(); };
     box.appendChild(b);
   });
 }
-
-let toastTimer = null;
 
 function showStatFloats(d) {
   if (!d || !d.length) return;
@@ -5343,6 +5309,7 @@ function hideToast() {
   const t = $('#toast');
   if (t) {
     t.classList.remove('show');
+    t.innerHTML = '';
     t.onclick = null;
   }
 }
@@ -5434,9 +5401,9 @@ function formatChoiceSub(text) {
 }
 
 function formatChoiceLabel(c) {
-  const specialBadge = c.special ? '<span class="choice-special-badge">🌟 特別進路</span> ' : '';
-  const rawLabel = typeof c.label === 'function' ? c.label() : c.label;
-  const subText = c.sub || '';
+  const specialBadge = c.special ? '<span class="choice-special-badge">特別進路</span> ' : '';
+  const rawLabel = cleanUiText(typeof c.label === 'function' ? c.label() : c.label);
+  const subText = cleanUiText(c.sub || '');
 
   if (subText) {
     return `<span class="choice-main">${specialBadge}${escapeHtml(rawLabel)}</span><span class="choice-sub">${formatChoiceSub(subText)}</span>`;
@@ -5489,15 +5456,15 @@ function runEvent(ev) {
     const isWorld = ev.badge === 'WORLD NEWS' || ev.isWorld;
     card.classList.toggle('world-news', !!isWorld);
     $('#modal-age').textContent = ev.badge || (S && $('#screen-game').classList.contains('active') ? `AGE ${S.age}` : 'MAIN MENU');
-    $('#modal-icon').textContent = ev.icon;
-    $('#modal-title').textContent = ev.title;
+    $('#modal-icon').textContent = '';
+    $('#modal-title').textContent = cleanUiText(ev.title);
     const textEl = $('#modal-text');
     if (ev.html) {
       textEl.classList.add('is-html');
       textEl.innerHTML = typeof ev.html === 'function' ? ev.html() : ev.html;
     } else {
       textEl.classList.remove('is-html');
-      textEl.textContent = typeof ev.text === 'function' ? ev.text() : ev.text;
+      textEl.textContent = cleanUiText(typeof ev.text === 'function' ? ev.text() : ev.text);
     }
     card.classList.toggle('has-col-wrap', !!textEl.querySelector('.col-wrap'));
     $('#modal-chips').innerHTML = '';
@@ -5940,23 +5907,24 @@ function renderChart() {
 
   box.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-      <line x1="${padX}" y1="${yOfStat(50)}" x2="${W - padX}" y2="${yOfStat(50)}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4"/>
-      <polyline fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsWealth}"/>
-      <polyline fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsFit}"/>
-      <polyline fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${ptsHappy}"/>
-      <text x="${padX}" y="${H - 1}" fill="#9aa0c3" font-size="11">0歳</text>
-      <text x="${W / 2}" y="${H - 1}" fill="#9aa0c3" font-size="11" text-anchor="middle">${Math.round(maxAge / 2)}歳</text>
-      <text x="${W - padX}" y="${H - 1}" fill="#9aa0c3" font-size="11" text-anchor="end">${maxAge}歳</text>
+      <line x1="${padX}" y1="${yOfStat(50)}" x2="${W - padX}" y2="${yOfStat(50)}" stroke="#d8d4ca" stroke-dasharray="4 4"/>
+      <polyline fill="none" stroke="#4a6fa5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsWealth}"/>
+      <polyline fill="none" stroke="#2a9d8f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="${ptsFit}"/>
+      <polyline fill="none" stroke="#d4a373" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${ptsHappy}"/>
+      <text x="${padX}" y="${H - 1}" fill="#626e68" font-size="11" font-family="'Roboto Mono', monospace">0歳</text>
+      <text x="${W / 2}" y="${H - 1}" fill="#626e68" font-size="11" text-anchor="middle" font-family="'Roboto Mono', monospace">${Math.round(maxAge / 2)}歳</text>
+      <text x="${W - padX}" y="${H - 1}" fill="#626e68" font-size="11" text-anchor="end" font-family="'Roboto Mono', monospace">${maxAge}歳</text>
     </svg>
     <div class="chart-legend">
-      <span><i style="background:#fbbf24"></i>幸福度</span>
-      <span><i style="background:#34d399"></i>体力</span>
-      <span><i style="background:#a78bfa"></i>総資産（最大 ${fmtMoney(maxW)}）</span>
+      <span><i style="background:#d4a373"></i>幸福度</span>
+      <span><i style="background:#2a9d8f"></i>体力</span>
+      <span><i style="background:#4a6fa5"></i>総資産（最大 ${fmtMoney(maxW)}）</span>
     </div>
   `;
 }
 
 function showEnd() {
+  hideToast();
   const e = evaluate();
   playSE('fanfare');
   document.body.dataset.stage = 'end';
@@ -5977,8 +5945,8 @@ function showEnd() {
   lastShare = buildShareData(e, finalEdu);
   renderChart();
   renderEndAlbum();
-  $('#end-ach').innerHTML = e.ach.map(a => `<span class="${a.on ? 'on' : 'off'}">${a.icon} ${a.name}</span>`).join('');
-  $('#end-timeline').innerHTML = S.log.filter(l => l.major).map(l => `<li><span class="t-age">${l.age}歳</span><span>${l.icon} ${l.text}</span></li>`).join('');
+  $('#end-ach').innerHTML = e.ach.map(a => `<span class="col-badge ${a.on ? 'on' : 'off'}">${a.name}</span>`).join('');
+  $('#end-timeline').innerHTML = S.log.filter(l => l.major).map(l => `<li><span class="t-age">${l.age}歳</span><span>${cleanUiText(l.text)}</span></li>`).join('');
 
   // コレクション＆殿堂入り記録の保存
   const finalJob = jobTitle();
@@ -6243,39 +6211,39 @@ async function openCollectionModal() {
           </div>
           <div class="hof-right">
             <span class="hof-score">${h.rank} / ${h.score}pt</span>
-            <button type="button" class="hof-share-btn" data-hof-idx="${i}" title="この人生の記録をシェア">📤 共有</button>
+            <button type="button" class="hof-share-btn" data-hof-idx="${i}" title="この人生の記録をシェア">共有</button>
           </div>
         </li>`).join('')}</ol>`
     : `<p style="color:var(--muted);font-size:.85rem;">まだ殿堂入り記録がありません。人生を最後まで歩むと記録されます。</p>`;
 
   const achHTML = ALL_ACHIEVEMENTS.map(a =>
-    `<span class="col-badge ${m.ach[a.name] ? 'on' : 'off'}">${a.icon} ${a.name}</span>`
+    `<span class="col-badge ${m.ach[a.name] ? 'on' : 'off'}">${a.name}</span>`
   ).join('');
 
   const jobHTML = allJobs.map(j =>
-    `<span class="col-badge ${m.jobs[j.name] ? 'on' : 'off'}">${j.icon} ${j.name}</span>`
+    `<span class="col-badge ${m.jobs[j.name] ? 'on' : 'off'}">${j.name}</span>`
   ).join('');
 
   const traitHTML = TRAITS.map(t =>
-    `<span class="col-badge ${m.traits[t.id] ? 'on' : 'off'}" title="${t.desc}">${t.icon} ${t.name}</span>`
+    `<span class="col-badge ${m.traits[t.id] ? 'on' : 'off'}" title="${t.desc}">${t.name}</span>`
   ).join('');
 
   const html = `
     <div class="col-wrap">
       <div>
-        <div class="col-sec-title">🏆 歴代ベスト人生（殿堂入り TOP10）</div>
+        <div class="col-sec-title">歴代ベスト人生（殿堂入り TOP10）</div>
         ${hofHTML}
       </div>
       <div>
-        <div class="col-sec-title">🎖️ 実績コレクション（${achGot} / ${ALL_ACHIEVEMENTS.length}）</div>
+        <div class="col-sec-title">実績コレクション（${achGot} / ${ALL_ACHIEVEMENTS.length}）</div>
         <div class="col-badges">${achHTML}</div>
       </div>
       <div>
-        <div class="col-sec-title">💼 職業図鑑（${jobGot} / ${allJobs.length}）</div>
+        <div class="col-sec-title">職業図鑑（${jobGot} / ${allJobs.length}）</div>
         <div class="col-badges">${jobHTML}</div>
       </div>
       <div>
-        <div class="col-sec-title">🧬 才能図鑑（${traitGot} / ${TRAITS.length}）</div>
+        <div class="col-sec-title">才能図鑑（${traitGot} / ${TRAITS.length}）</div>
         <div class="col-badges">${traitHTML}</div>
       </div>
     </div>
@@ -6290,7 +6258,7 @@ async function openCollectionModal() {
     html,
     choices: [
       {
-        label: '📤 図鑑・歴代記録のまとめをシェア',
+        label: '図鑑・歴代記録のまとめをシェア',
         silent: true,
         fn: () => { shareSummary = true; return ''; },
       },
