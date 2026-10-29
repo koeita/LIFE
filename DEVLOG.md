@@ -32,6 +32,19 @@
 
 最新の日付が上になるよう、日別に実装・修正した内容を記録しています。
 
+### 📅 2026-10-30
+* **Cloudflare Workers Buildsデプロイ向け最小構成 `wrangler.toml` の作成 (`feat/app-icon-and-pwa`)**:
+  * Cloudflare Workers Builds で静的サイトをそのまま公開できるよう、最小構成の `wrangler.toml`（`[assets] directory = "."`、`[previews]`、`compatibility_date = "2024-10-20"`）を作成。設定の二重定義を防止するため `wrangler.json` を削除して一本化。
+* **PWA対応およびオリジナルアプリアイコンの実装 (`feat/app-icon-and-pwa`)**:
+  * **オリジナルアプリアイコンのデザインと生成・配置**:
+    * ゲームの世界観「人生の記録帳・アナログ手帳」に合わせ、深みのあるインクブラック背景に、温かいクリーム色の手帳（年表タイムライン入り）、朱色のしおりリボン、ゴールド＆エメラルドグリーンのクラシック万年筆を配置した高視認性ベクターアイコン (`icon.svg`) を新規デザイン。
+    * iOS (`apple-touch-icon.png` 180x180)、Android/Chrome (`icon-192.png`, `icon-512.png`)、ファビコン (`favicon-32.png`) を高解像度レンダリング生成し配置。AndroidのAdaptive Icon / Maskable icon規格（セーフゾーン80%）に完全対応。
+  * **Web App Manifest (`manifest.json`) の新規作成**:
+    * `display: "standalone"` によるブラウザURLバー非表示・ネイティブアプリ風の全画面起動を設定。
+    * `theme_color: "#2c3531"`, `background_color: "#f4f1ea"`, `short_name: "LIFE"` を設定。
+  * **`index.html` の `<head>` メタタグ拡充**:
+    * `manifest.json` の読み込み、`apple-touch-icon`、`apple-mobile-web-app-capable`、`apple-mobile-web-app-status-bar-style`、`theme-color` を追加。スマホの「ホーム画面に追加」時に本物のネイティブアプリ同様の没入感で起動する環境を構築。
+
 ### 📅 2026-10-29
 * **UI刷新に伴うレイアウト崩れ・表示不具合の徹底調査と修正 (`refactor/ui-improvement`)**:
   * **トースト通知の配置適正化**:

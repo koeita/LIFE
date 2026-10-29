@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- 背景グラデーション（品格のある深いチャコールインク） -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2d3732"/>
+      <stop offset="100%" stop-color="#1b221e"/>
+    </linearGradient>
+
+    <!-- 手帳ページの陰影グラデーション -->
+    <linearGradient id="leftPage" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ede9df"/>
+      <stop offset="75%" stop-color="#fdfcf8"/>
+      <stop offset="100%" stop-color="#dcd7c9"/>
+    </linearGradient>
+    <linearGradient id="rightPage" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#dcd7c9"/>
+      <stop offset="25%" stop-color="#fdfcf8"/>
+      <stop offset="100%" stop-color="#ede9df"/>
+    </linearGradient>
+
+    <!-- しおりリボン（スタンプ朱肉赤） -->
+    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e35d59"/>
+      <stop offset="100%" stop-color="#b83834"/>
+    </linearGradient>
+
+    <!-- 万年筆ペン先（ヴィンテージゴールドとレトログリーンの優雅なツートーン） -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f9e076"/>
+      <stop offset="50%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#aa820a"/>
+    </linearGradient>
+
+    <!-- 影フィルタ -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#0a0e0c" flood-opacity="0.55"/>
+    </filter>
+    <filter id="penShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="6" dy="12" stdDeviation="10" flood-color="#0a0e0c" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- 背景（全域塗りでMaskable safe-zoneに完全対応） -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
+
+  <!-- 内側の繊細な飾り枠（アナログ手帳の箔押しをイメージ） -->
+  <rect x="32" y="32" width="448" height="448" rx="80" fill="none" stroke="#f4f1ea" stroke-width="2" stroke-opacity="0.12"/>
+
+  <!-- 手帳（開いた人生の記録帳） -->
+  <g filter="url(#softShadow)">
+    <!-- 本のハードカバー台紙（重厚なダークグリーンベース） -->
+    <path d="M 76 366 C 160 382 226 368 256 386 C 286 368 352 382 436 366 L 436 154 C 352 170 286 156 256 174 C 226 156 160 170 76 154 Z"
+          fill="#17221e" stroke="#2c3531" stroke-width="6" stroke-linejoin="round"/>
+    
+    <!-- カバーの内側レザーの厚み -->
+    <path d="M 78 358 C 160 374 226 360 256 378 C 286 360 352 374 434 358 L 434 148 C 352 164 286 150 256 168 C 226 150 160 164 78 148 Z"
+          fill="#23352f" opacity="0.6"/>
+
+    <!-- 左ページ（人生の足跡・記録） -->
+    <path d="M 84 146 C 158 162 222 150 256 170 L 256 372 C 222 352 158 364 84 348 Z"
+          fill="url(#leftPage)" stroke="#2c3531" stroke-width="5" stroke-linejoin="round"/>
+
+    <!-- 右ページ（これからの未来・選択） -->
+    <path d="M 256 170 C 290 150 354 162 428 146 L 428 348 C 354 364 290 352 256 372 Z"
+          fill="url(#rightPage)" stroke="#2c3531" stroke-width="5" stroke-linejoin="round"/>
+
+    <!-- ページ中央の陰影ステッチ -->
+    <line x1="256" y1="170" x2="256" y2="372" stroke="#b0a998" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- 左ページ：手帳の年表罫線とマイルストーン -->
+    <!-- タイムライン縦軸 -->
+    <line x1="122" y1="198" x2="122" y2="298" stroke="#2a9d8f" stroke-width="3.5" stroke-linecap="round" stroke-opacity="0.6"/>
+    <!-- 年表ノード -->
+    <circle cx="122" cy="202" r="6" fill="#2a9d8f"/>
+    <circle cx="122" cy="248" r="6" fill="#2a9d8f"/>
+    <circle cx="122" cy="294" r="6" fill="#2a9d8f"/>
+    
+    <!-- 記録テキスト罫線 -->
+    <line x1="138" y1="202" x2="228" y2="209" stroke="#2c3531" stroke-width="6.5" stroke-linecap="round" stroke-opacity="0.75"/>
+    <line x1="138" y1="248" x2="220" y2="255" stroke="#2c3531" stroke-width="6.5" stroke-linecap="round" stroke-opacity="0.75"/>
+    <line x1="138" y1="294" x2="224" y2="301" stroke="#2c3531" stroke-width="6.5" stroke-linecap="round" stroke-opacity="0.75"/>
+    <line x1="108" y1="328" x2="188" y2="333" stroke="#2c3531" stroke-width="5" stroke-linecap="round" stroke-opacity="0.35"/>
+
+    <!-- 右ページ：うっすらとした手帳の格子ドット/罫線 -->
+    <line x1="284" y1="288" x2="384" y2="280" stroke="#2c3531" stroke-width="5" stroke-linecap="round" stroke-opacity="0.25"/>
+    <line x1="284" y1="324" x2="350" y2="317" stroke="#2c3531" stroke-width="5" stroke-linecap="round" stroke-opacity="0.25"/>
+
+    <!-- 朱色のしおりリボン（中央上部から垂れ、本の下端からリボンの三角カットが覗く） -->
+    <path d="M 248 166 C 248 166 244 240 250 310 C 253 346 260 392 260 412 L 273 396 L 286 412 C 286 392 278 346 274 310 C 268 240 264 166 264 166 Z"
+          fill="url(#ribbonGrad)" stroke="#781d1a" stroke-width="3" stroke-linejoin="round"/>
+  </g>
+
+  <!-- 右上に重ねたクラシック万年筆のペン先（Nib） -->
+  <g filter="url(#penShadow)" transform="translate(348, 206) rotate(-28)">
+    <!-- ペン先外形（精巧な万年筆フォルム） -->
+    <path d="M -38 70 L -38 0 C -38 -45 -14 -95 0 -130 C 14 -95 38 -45 38 0 L 38 70 C 20 80 -20 80 -38 70 Z"
+          fill="url(#goldGrad)" stroke="#2c3531" stroke-width="5" stroke-linejoin="round"/>
+
+    <!-- ペン先インナープレート（エメラルドグリーンのツートーン象嵌） -->
+    <path d="M -24 35 C -24 -20 -8 -60 0 -84 C 8 -60 24 -20 24 35 C 12 42 -12 42 -24 35 Z"
+          fill="#2a9d8f" stroke="#165149" stroke-width="3" stroke-linejoin="round"/>
+
+    <!-- ハート穴（インクホール）とペン先スリット -->
+    <circle cx="0" cy="-28" r="6" fill="#1b221e"/>
+    <line x1="0" y1="-28" x2="0" y2="-130" stroke="#1b221e" stroke-width="4.5" stroke-linecap="round"/>
+    
+    <!-- 首軸（ホルダー）の接続リング -->
+    <rect x="-38" y="70" width="76" height="16" rx="3" fill="#2c3531"/>
+  </g>
+</svg>
