@@ -14,8 +14,15 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 const STATS = ['smarts', 'fitness', 'social', 'creativity', 'happy'];
-const LABEL = { smarts: '知力', fitness: '体力', social: '社交', creativity: '創造', happy: '幸福', money: 'お金' };
-const STAT_ICON = { smarts: '🧠', fitness: '💪', social: '🤝', creativity: '🎨', happy: '😊' };
+const LABEL = { smarts: '知力', fitness: '体力', social: '社交', creativity: '創造', happy: '幸福', money: '資産' };
+const STAT_ICON = { smarts: '', fitness: '', social: '', creativity: '', happy: '' };
+
+function cleanUiText(text) {
+  if (!text) return '';
+  return text
+    .replace(/[💰🪙❤️💖💕🎓📚✨🎉🎊🧠💪🤝🎨😊🏠🏡⚡🎲🕊️📸]/gu, '')
+    .trim();
+}
 
 // ---------- 性格システム（MBTI風 16タイプ） ----------
 const MBTI_TYPES = {
@@ -364,7 +371,7 @@ function applyPrefsUI() {
   document.body.classList.remove('fast-mode');
   const sb = $('#btn-sound');
   if (sb) {
-    sb.textContent = prefs.sound ? '🔊 音ON' : '🔇 音OFF';
+    sb.textContent = prefs.sound ? '効果音: ON' : '効果音: OFF';
     sb.classList.toggle('on', prefs.sound);
   }
 }
@@ -707,7 +714,7 @@ function fx(obj) {
 const snap = () => ({ smarts: S.smarts, fitness: S.fitness, social: S.social, creativity: S.creativity, happy: S.happy, money: S.money });
 const diff = b => Object.keys(b).map(k => ({ k, v: S[k] - b[k] })).filter(x => x.v !== 0);
 const chipsHTML = d => d.map(x =>
-  `<span class="chip ${x.k} ${x.v > 0 ? 'up' : 'down'}">${STAT_ICON[x.k] || (x.k === 'money' ? '💰' : '')} ${LABEL[x.k]} ${x.v > 0 ? '+' : ''}${x.v}${x.k === 'money' ? '万' : ''}</span>`).join('');
+  `<span class="chip ${x.k} ${x.v > 0 ? 'up' : 'down'}"><span class="chip-dot"></span>${LABEL[x.k] || ''} ${x.v > 0 ? '+' : ''}${x.v}${x.k === 'money' ? '万' : ''}</span>`).join('');
 
 function setJob(j) {
   S.job = { name: j.name, base: j.base, level: 0, corp: !!j.corp, icon: j.icon };
@@ -775,26 +782,25 @@ function stageLabel() {
 }
 
 function currentOccupationBadge() {
-  if (S.ronin) return `📚 浪人生（${S.ronin}浪目）`;
+  if (S.ronin) return `浪人生（${S.ronin}浪目）`;
   const st = stage();
-  if (st === 'baby') return '🍼 赤ちゃん';
-  if (st === 'kid') return '⚽ 幼児';
-  if (st === 'elem') return '🎒 小学生';
+  if (st === 'baby') return '乳幼児';
+  if (st === 'kid') return '幼児';
+  if (st === 'elem') return '小学生';
   if (st === 'teen') {
-    if (S.age < 15) return S.jh ? `🏫 中学生（${S.jh}）` : '🏫 中学生';
-    return S.hs ? `🎓 高校生（${S.hs}）` : '🎓 高校生';
+    if (S.age < 15) return S.jh ? `中学生（${S.jh}）` : '中学生';
+    return S.hs ? `高校生（${S.hs}）` : '高校生';
   }
   if (st === 'college') {
-    if (S.gradSchool) return `🎓 大学院生（${S.gradSchool}）`;
-    if (S.uni) return `🎓 大学生（${S.uni}）`;
-    return S.uniRank >= 2 ? '🎓 大学生（難関大）' : '🎓 大学生';
+    if (S.gradSchool) return `大学院生（${S.gradSchool}）`;
+    if (S.uni) return `大学生（${S.uni}）`;
+    return S.uniRank >= 2 ? '大学生（難関大）' : '大学生';
   }
-  if (S.retired) return S.lastJob ? `🕊️ 年金生活（元・${S.lastJob.name}）` : '🕊️ 年金生活';
+  if (S.retired) return S.lastJob ? `年金生活（元・${S.lastJob.name}）` : '年金生活';
   if (S.job) {
-    const icon = S.job.icon || '💼';
-    return `${icon} ${jobTitle()}`;
+    return jobTitle();
   }
-  return '🔍 求職中';
+  return '求職中';
 }
 
 // ---------- 行動 ----------
@@ -4840,12 +4846,11 @@ function renderSingleLog(item) {
     li.className = 'sep';
     const net = (item.inc || 0) - (item.cost || 0);
     const stockTxt = item.stockGain ? ` / 株${item.stockGain >= 0 ? '+' : ''}${item.stockGain}万` : '';
-    li.textContent = item.inc || item.cost || item.stockGain
-      ? `${item.age}歳 ｜ 前年収支 ${net >= 0 ? '+' : ''}${net}万${stockTxt}`
-      : `${item.age}歳`;
+    li.innerHTML = `<span class="sep-dot"></span><span class="sep-age">${item.age}歳</span><span class="sep-info">${item.inc || item.cost || item.stockGain ? `前年収支 ${net >= 0 ? '+' : ''}${net}万${stockTxt}` : '年の歩み'}</span>`;
   } else {
     if (item.major) li.className = 'major';
-    li.innerHTML = `<span class="l-icon">${item.icon}</span><div>${item.text}${item.d && item.d.length ? `<div class="chips">${chipsHTML(item.d)}</div>` : ''}</div>`;
+    const cleanText = cleanUiText(item.text);
+    li.innerHTML = `<span class="l-marker"></span><div class="l-content"><span class="l-text">${cleanText}</span>${item.d && item.d.length ? `<div class="chips">${chipsHTML(item.d)}</div>` : ''}</div>`;
   }
   $('#log').prepend(li);
 }
@@ -4903,29 +4908,48 @@ function renderAll() {
   if (traitsBox) {
     const genChip = '';
     const m = S.mbti ? mbtiObj(S.mbti) : null;
-    const mbtiChip = m ? `<button type="button" class="trait-chip mbti clickable" onclick="showMbtiDetail('${m.axis}')" title="${m.axis}（${m.name}）の説明を表示">🌱 ${m.axis}（${m.name}） ℹ️</button>` : '';
+    const mbtiChip = m ? `<button type="button" class="trait-chip mbti clickable" onclick="showMbtiDetail('${m.axis}')" title="${m.axis}（${m.name}）の説明を表示">${m.axis}（${m.name}）</button>` : '';
     const tChips = (S.traits || []).map(id => {
       const t = traitObj(id);
-      return t ? `<button type="button" class="trait-chip clickable" onclick="showTraitDetail('${t.id}')" title="${t.name}の説明を表示">${t.icon} ${t.name} ℹ️</button>` : '';
+      return t ? `<button type="button" class="trait-chip clickable" onclick="showTraitDetail('${t.id}')" title="${t.name}の説明を表示">${t.name}</button>` : '';
     }).join('');
     traitsBox.innerHTML = genChip + mbtiChip + tChips;
   }
 
+  const triggerBounce = (el) => {
+    if (!el) return;
+    el.classList.remove('num-bounce');
+    void el.offsetWidth;
+    el.classList.add('num-bounce');
+  };
+
   const ageEl = $('#hud-age');
-  if (ageEl.textContent !== String(S.age)) { ageEl.textContent = S.age; ageEl.classList.remove('pop'); void ageEl.offsetWidth; ageEl.classList.add('pop'); }
+  if (ageEl && ageEl.textContent !== String(S.age)) {
+    ageEl.textContent = S.age;
+    triggerBounce(ageEl);
+  }
   $('#hud-lifebar').style.width = Math.min(S.age, 100) + '%';
   const finAssets = S.assets.stock + S.assets.estate;
-  $('#hud-money').innerHTML = finAssets > 0
-    ? `<span class="ib">貯金 ${fmtMoney(S.money)}</span><span class="ib">（資産 ${fmtMoney(finAssets)}）</span>`
-    : `貯金 ${fmtMoney(S.money)}`;
+  const moneyEl = $('#hud-money');
+  if (moneyEl) {
+    const prevMoney = moneyEl.dataset.prevVal;
+    const currentVal = `${S.money}_${finAssets}`;
+    moneyEl.innerHTML = finAssets > 0
+      ? `<span class="ib">貯金 ${fmtMoney(S.money)}</span><span class="ib">（資産 ${fmtMoney(finAssets)}）</span>`
+      : `貯金 ${fmtMoney(S.money)}`;
+    if (prevMoney !== undefined && prevMoney !== currentVal) {
+      triggerBounce(moneyEl);
+    }
+    moneyEl.dataset.prevVal = currentVal;
+  }
 
   const miniStats = $('#mini-stats');
   if (miniStats) {
     miniStats.innerHTML = STATS.map(k => `
       <div class="mini-stat" title="タップしてステータス・プロフィール詳細を表示">
         <div class="mini-stat-top">
-          <span class="mini-stat-label"><i class="mini-stat-ic">${STAT_ICON[k]}</i><span class="mini-stat-txt">${LABEL[k]}</span></span>
-          <b class="mini-stat-val">${S[k]}</b>
+          <span class="mini-stat-label"><span class="mini-stat-dot ${k}"></span><span class="mini-stat-txt">${LABEL[k]}</span></span>
+          <b class="mini-stat-val ${k}" data-stat="${k}">${S[k]}</b>
         </div>
         <div class="mini-bar"><div class="bar-fill ${k} ${S[k] < 20 ? 'low' : ''}" style="width:${S[k]}%"></div></div>
       </div>`).join('');
@@ -4982,9 +5006,9 @@ function renderAll() {
     return `
       <div class="stat-card ${k}">
         <div class="stat-head">
-          <span class="stat-name">${STAT_ICON[k]} ${LABEL[k]}</span>
+          <span class="stat-name"><span class="stat-dot ${k}"></span>${LABEL[k]}</span>
           <span class="stat-level-badge ${k} ${lvl.cls}">${lvl.label}</span>
-          <b class="stat-num">${S[k]}</b>
+          <b class="stat-num ${k}" data-stat="${k}">${S[k]}</b>
         </div>
         <div class="bar"><div class="bar-fill ${k} ${S[k] < 20 ? 'low' : ''}" style="width:${S[k]}%"></div></div>
       </div>`;
@@ -4992,8 +5016,8 @@ function renderAll() {
 
   const finalEduText = formatEduString();
   const partner = S.married
-    ? `${S.partner}（💖${S.partnerLove}%）`
-    : S.partner ? `恋人：${S.partner}（💖${S.partnerLove}%）` : 'なし';
+    ? `${S.partner}（好感度 ${S.partnerLove}%）`
+    : S.partner ? `恋人：${S.partner}（好感度 ${S.partnerLove}%）` : 'なし';
   const sideInc = S.sideJob ? calcSideJobIncome(S.sideJob) : 0;
   const partnerInc = (S.married && S.partnerInfo) ? S.partnerInfo.job.inc : 0;
   const passiveInc = sideInc + estateRentIncome() + partnerInc;
@@ -5001,53 +5025,52 @@ function renderAll() {
   const orientLabel = { hetero: '異性', homo: '同性', bi: '両性・誰でも' }[S.orientation] || '異性';
 
   const basicItems = [
-    { ic: '🏠', label: '生まれ・実家', val: FAMILY[S.family].label },
-    { ic: '🚻', label: '性別・指向', val: `${genderLabel}（対象：${orientLabel}）` },
-    { ic: '🧩', label: '性格タイプ', val: S.mbti ? `${S.mbti}（${mbtiObj(S.mbti).name}）` : '未設定', isMbti: true },
-    { ic: '✨', label: '生まれの才能', val: (S.traits || []).map(id => traitObj(id)?.name).filter(Boolean).join('・') || 'なし', isTrait: true },
+    { label: '生まれ・実家', val: FAMILY[S.family].label },
+    { label: '性別・指向', val: `${genderLabel}（対象：${orientLabel}）` },
+    { label: '性格タイプ', val: S.mbti ? `${S.mbti}（${mbtiObj(S.mbti).name}）` : '未設定', isMbti: true },
+    { label: '生まれの才能', val: (S.traits || []).map(id => traitObj(id)?.name).filter(Boolean).join('・') || 'なし', isTrait: true },
   ];
 
   const careerItems = [
-    { ic: '🎓', label: '学歴', val: finalEduText },
-    { ic: '💼', label: '職業・役職', val: jobTitle() },
-    { ic: '💴', label: '本業年収', val: S.job ? fmtMoney(salary()) : S.retired ? '年金 180万円' : '—' },
+    { label: '学歴', val: finalEduText },
+    { label: '職業・役職', val: jobTitle() },
+    { label: '本業年収', val: S.job ? fmtMoney(salary()) : S.retired ? '年金 180万円' : '—' },
   ];
   if (S.sideJob) {
     const sj = SIDE_JOBS.find(j => j.id === S.sideJob.id) || { name: S.sideJob.name };
-    careerItems.push({ ic: '💻', label: '副業', val: `${sj.name}（年 +${fmtMoney(sideInc)}）` });
+    careerItems.push({ label: '副業', val: `${sj.name}（年 +${fmtMoney(sideInc)}）` });
   }
   if (passiveInc > 0) {
-    careerItems.push({ ic: '📈', label: '副収入・共働き', val: `+${fmtMoney(passiveInc)}/年` });
+    careerItems.push({ label: '副収入・共働き', val: `+${fmtMoney(passiveInc)}/年` });
   }
 
   const lifeItems = [];
   if (finAssets > 0) {
-    lifeItems.push({ ic: '🏦', label: '運用資産', val: fmtMoney(finAssets) });
+    lifeItems.push({ label: '運用資産', val: fmtMoney(finAssets) });
   }
-  lifeItems.push({ ic: S.married ? '💍' : '💖', label: 'パートナー', val: partner });
+  lifeItems.push({ label: 'パートナー', val: partner });
   const kidsText = (S.kids && S.kids.length)
     ? `${S.kids.length}人（${S.kids.map(k => k.name).join('・')}）`
     : 'なし';
-  lifeItems.push({ ic: '👶', label: '子ども', val: kidsText });
+  lifeItems.push({ label: '子ども', val: kidsText });
   const hObj = currentHouseObj();
-  if (hObj) lifeItems.push({ ic: '🏠', label: '住まい', val: hObj.name });
-  else if (S.flags.house) lifeItems.push({ ic: '🏠', label: '住まい', val: '持ち家' });
-  else lifeItems.push({ ic: '🏠', label: '住まい', val: '実家 / 賃貸' });
+  if (hObj) lifeItems.push({ label: '住まい', val: hObj.name });
+  else if (S.flags.house) lifeItems.push({ label: '住まい', val: '持ち家' });
+  else lifeItems.push({ label: '住まい', val: '実家 / 賃貸' });
 
   const cObj = currentCarObj();
-  if (cObj) lifeItems.push({ ic: '🚗', label: '愛車', val: cObj.name });
+  if (cObj) lifeItems.push({ label: '愛車', val: cObj.name });
   if (S.flags.pet) {
     const pets = [];
-    if (S.assets.items.includes('dog')) pets.push('🐶 愛犬');
+    if (S.assets.items.includes('dog')) pets.push('愛犬');
     const catName = S.flags.petName || 'こむぎ';
-    pets.push(`🐱 ${catName}`);
-    lifeItems.push({ ic: '🐾', label: 'ペット', val: pets.join('・') });
+    pets.push(catName);
+    lifeItems.push({ label: 'ペット', val: pets.join('・') });
   }
-
   const sections = [
-    { title: '👤 基本・パーソナリティ', items: basicItems },
-    { title: '💼 キャリア・収入', items: careerItems },
-    { title: '🏡 暮らし・家族・資産', items: lifeItems },
+    { title: '基本・パーソナリティ', items: basicItems },
+    { title: 'キャリア・収入', items: careerItems },
+    { title: '暮らし・家族・資産', items: lifeItems },
   ];
 
   const fmtProfileVal = (item) => {
@@ -5057,7 +5080,7 @@ function renderAll() {
       return `
         <div class="val-with-btn">
           <span class="p-badge mbti">${S.mbti}</span> <span class="sub-val">${mbtiObj(S.mbti).name}</span>
-          <button type="button" class="btn-info-inline" onclick="showMbtiDetail('${S.mbti}')" title="性格の詳細説明を表示">説明 ℹ️</button>
+          <button type="button" class="btn-info-inline" onclick="showMbtiDetail('${S.mbti}')" title="性格の詳細説明を表示">詳細</button>
         </div>`;
     }
     if (item.isTrait) {
@@ -5066,7 +5089,7 @@ function renderAll() {
           <div class="val-with-btn">
             ${(S.traits || []).map(id => {
               const t = traitObj(id);
-              return `<button type="button" class="p-badge trait clickable" onclick="showTraitDetail('${id}')" title="${t?.name}の詳細説明を表示">${t?.icon || ''}${t?.name} ℹ️</button>`;
+              return `<button type="button" class="p-badge trait clickable" onclick="showTraitDetail('${id}')" title="${t?.name}の詳細説明を表示">${t?.name}</button>`;
             }).join(' ')}
           </div>`;
       }
@@ -5088,7 +5111,7 @@ function renderAll() {
       <div class="profile-group-items">
         ${sec.items.map(it => `
           <div class="profile-item">
-            <div class="pi-label"><span class="pi-icon">${it.ic}</span><span>${it.label}</span></div>
+            <div class="pi-label"><span class="pi-label-text">${it.label}</span></div>
             <div class="pi-val">${fmtProfileVal(it)}</div>
           </div>
         `).join('')}
@@ -5330,9 +5353,10 @@ function toast(text, d = []) {
 
   hideToast();
 
+  const cleanText = cleanUiText(text);
   t.innerHTML = `
     <div class="toast-main">
-      <span class="toast-msg">${text}</span>
+      <span class="toast-msg">${cleanText}</span>
       ${d && d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}
     </div>
   `;
@@ -5541,7 +5565,7 @@ function runEvent(ev) {
         textEl.textContent = res.text || '';
         let cHtml = chipsHTML(d);
         if (S && S._pendingSnap) {
-          cHtml += `<span class="chip snap-chip">📸 スナップ「${escapeHtml(S._pendingSnap.title)}」</span>`;
+          cHtml += `<span class="chip snap-chip"><span class="chip-dot"></span>スナップ「${escapeHtml(S._pendingSnap.title)}」</span>`;
           delete S._pendingSnap;
         }
         $('#modal-chips').innerHTML = cHtml;
@@ -6144,7 +6168,7 @@ async function openShareModal(targetData = null, opts = {}) {
         <button type="button" id="share-native" class="choice primary">📤 共有する</button>
         <button type="button" id="share-copy" class="choice">📋 テキストをコピー</button>
         <button type="button" id="share-x" class="choice">𝕏 で投稿する</button>
-        <button type="button" id="share-img" class="choice">🖼️ 結果カードを画像保存</button>
+        <button type="button" id="share-img" class="choice">結果カードを画像保存</button>
       </div>
       <div id="share-msg" class="share-msg"></div>`,
     choices: [{ label: opts.fromCollection ? '← コレクション図鑑に戻る' : '閉じる', cancel: true, fn: () => '' }],
