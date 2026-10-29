@@ -5296,6 +5296,8 @@ function showStatFloats(d) {
 }
 
 let bgDismissHandler = null;
+let toastTimer = null;
+let toastFadeTimer = null;
 
 function clearBackgroundDismiss() {
   if (bgDismissHandler) {
@@ -5304,13 +5306,31 @@ function clearBackgroundDismiss() {
   }
 }
 
-function hideToast() {
+function hideToast(immediate = false) {
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+    toastTimer = null;
+  }
+  if (toastFadeTimer) {
+    clearTimeout(toastFadeTimer);
+    toastFadeTimer = null;
+  }
   clearBackgroundDismiss();
   const t = $('#toast');
   if (t) {
-    t.classList.remove('show');
-    t.innerHTML = '';
-    t.onclick = null;
+    if (immediate) {
+      t.classList.remove('show', 'fade-out');
+      t.innerHTML = '';
+      t.onclick = null;
+    } else {
+      t.classList.add('fade-out');
+      toastFadeTimer = setTimeout(() => {
+        t.classList.remove('show', 'fade-out');
+        t.innerHTML = '';
+        t.onclick = null;
+        toastFadeTimer = null;
+      }, 280);
+    }
   }
 }
 
@@ -5318,7 +5338,7 @@ function toast(text, d = []) {
   const t = $('#toast');
   if (!t) return;
 
-  hideToast();
+  hideToast(true);
 
   const cleanText = cleanUiText(text);
   t.innerHTML = `
@@ -5327,46 +5347,28 @@ function toast(text, d = []) {
       ${d && d.length ? `<span class="chips">${chipsHTML(d)}</span>` : ''}
     </div>
   `;
+  t.classList.remove('fade-out');
   t.classList.add('show');
   if (d && d.length) showStatFloats(d);
+
+  // ステータス上昇ポップアップを数秒（3秒間）残す
+  toastTimer = setTimeout(() => {
+    hideToast(false);
+  }, 3000);
 
   // トースト自体をタップしてもサッと消せる
   t.onclick = (e) => {
     e.stopPropagation();
-    hideToast();
+    hideToast(true);
   };
 }
 
 function waitForScreenTapOrDismiss() {
-  clearBackgroundDismiss();
-  return new Promise(resolve => {
-    const onScreenTap = (e) => {
-      clearBackgroundDismiss();
-      hideToast();
-      resolve();
-    };
-    bgDismissHandler = onScreenTap;
-    // 直前のカード操作の直後すぐに誤爆しないよう80ms後にリスナーを登録
-    setTimeout(() => {
-      if (bgDismissHandler === onScreenTap) {
-        document.addEventListener('pointerdown', onScreenTap, true);
-      }
-    }, 80);
-  });
+  return Promise.resolve();
 }
 
 function setupBackgroundDismissForToast() {
-  clearBackgroundDismiss();
-  const onScreenTap = (e) => {
-    clearBackgroundDismiss();
-    hideToast();
-  };
-  bgDismissHandler = onScreenTap;
-  setTimeout(() => {
-    if (bgDismissHandler === onScreenTap) {
-      document.addEventListener('pointerdown', onScreenTap, true);
-    }
-  }, 80);
+  // 自動タイマーで数秒残すため、背景タップ消去は行わない
 }
 
 const escapeHtml = str => String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -5758,8 +5760,9 @@ async function doAction(act) {
 
   if (events.length > 0) {
     // 【イベントがある場合】
-    // トーストをじっくり読んだ後、画面上のどこでもタップするとトーストが消えてイベントが表示される！
-    await waitForScreenTapOrDismiss();
+    // ポップアップが消えたかに関係なく、わずかな余韻（200ms）の後にイベントを即座に表示！
+    // ポップアップ（トースト）は画面下部でタイマーに従って数秒残り、自動でフェードアウトする
+    await sleep(200);
     for (const ev of events) {
       await triggerEvent(ev);
     }
@@ -5770,13 +5773,6 @@ async function doAction(act) {
   S.pendingActionId = null;
   busy = false;
   renderAll();
-
-  if (events.length === 0) {
-    // 【イベントがない場合】
-    // トーストを表示したままでもカードを押せる！
-    // かつ画面上のどこかをタップすればトーストが消えるリスナーをセット
-    setupBackgroundDismissForToast();
-  }
 
   if (dead) {
     busy = true;

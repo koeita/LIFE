@@ -1450,6 +1450,12 @@ html.modal-open {
   cursor: pointer;
   animation: toastUp 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
 }
+.toast.fade-out {
+  opacity: 0 !important;
+  transform: translate(-50%, 8px) !important;
+  pointer-events: none !important;
+  transition: opacity 0.28s ease, transform 0.28s ease !important;
+}
 @keyframes toastUp {
   from { opacity: 0; transform: translate(-50%, 16px); }
   to { opacity: 1; transform: translate(-50%, 0); }
