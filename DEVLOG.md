@@ -33,8 +33,8 @@
 最新の日付が上になるよう、日別に実装・修正した内容を記録しています。
 
 ### 📅 2026-10-30
-* **Cloudflareプレビュービルド向けWrangler設定の追加 (`feat/app-icon-and-pwa`)**:
-  * Cloudflareのプレビュービルド (`npx wrangler preview`) 実行時に発生する `missing a previews block` エラーを解消するため、Wrangler設定ファイル (`wrangler.json`) を作成し、空の `"previews": {}` ブロックおよび静的サイト配信設定を追加。
+* **Cloudflareプレビュービルド向けWrangler設定の更新 (`feat/app-icon-and-pwa`)**:
+  * Cloudflare Workers Static Assets形式（`assets: { "directory": "." }`、`compatibility_date: "2024-10-22"`、`previews: {}`）に合わせて `wrangler.json` を更新。プレビュービルド時のエラーを解消。
 * **PWA対応およびオリジナルアプリアイコンの実装 (`feat/app-icon-and-pwa`)**:
   * **オリジナルアプリアイコンのデザインと生成・配置**:
     * ゲームの世界観「人生の記録帳・アナログ手帳」に合わせ、深みのあるインクブラック背景に、温かいクリーム色の手帳（年表タイムライン入り）、朱色のしおりリボン、ゴールド＆エメラルドグリーンのクラシック万年筆を配置した高視認性ベクターアイコン (`icon.svg`) を新規デザイン。
