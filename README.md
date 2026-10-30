@@ -24,11 +24,11 @@
 
 | メインゲーム画面（年次行動カード） | ライフスタイル（趣味・ペット・移住） |
 | :---: | :---: |
-| <img src="docs/screenshots/screen_main.png" width="380" alt="メイン画面"> | <img src="docs/screenshots/screen_lifestyle.png" width="380" alt="自由行動メニュー"> |
+| <img src="docs/screenshots/screen_main.png?v=20261031" width="380" alt="メイン画面"> | <img src="docs/screenshots/screen_lifestyle.png?v=20261031" width="380" alt="自由行動メニュー"> |
 
 | イベント・マイルストーンモーダル | エンディング・人生アルバム（スナップ） |
 | :---: | :---: |
-| <img src="docs/screenshots/screen_event.png" width="380" alt="イベント画面"> | <img src="docs/screenshots/screen_ending.png" width="380" alt="エンディング画面"> |
+| <img src="docs/screenshots/screen_event.png?v=20261031" width="380" alt="イベント画面"> | <img src="docs/screenshots/screen_ending.png?v=20261031" width="380" alt="エンディング画面"> |
 
 </div>
 
