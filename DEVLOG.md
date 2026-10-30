@@ -33,6 +33,12 @@
 最新の日付が上になるよう、日別に実装・修正した内容を記録しています。
 
 ### 📅 2026-10-30
+* **iOSセーフエリア（Safe Area）および全画面PWA表示の最適化 (`feat/app-icon-and-pwa`)**:
+  * **セーフエリアインセットの余白確保**:
+    * iPhoneの「ホーム画面に追加」（PWAスタンドアロンモード）での全画面起動時に、ステータスバーやノッチ、ダイナミックアイランド、下部ホームインジケーターに画面コンテンツが食い込む問題を解消。
+    * `body` および固定モーダル (`.modal`)、トースト (`.toast`) に対して `env(safe-area-inset-top)`、`env(safe-area-inset-bottom)`、`env(safe-area-inset-left)`、`env(safe-area-inset-right)` を組み込み、安全領域を自動確保。
+  * **動的ビューポート高さ (`100dvh`) への移行**:
+    * モバイル環境でのアドレスバー開閉や全画面起動時の高さズレを防止するため、画面コンテナ (`#app`, `.screen`) およびモーダル内スクロール要素の高さを `100vh` から `100dvh` へ移行し、`box-sizing: border-box;` を適用。
 * **Cloudflare Workers Buildsデプロイ向け最小構成 `wrangler.toml` の作成 (`feat/app-icon-and-pwa`)**:
   * Cloudflare Workers Builds で静的サイトをそのまま公開できるよう、最小構成の `wrangler.toml`（`[assets] directory = "."`、`[previews]`、`compatibility_date = "2024-10-20"`）を作成。設定の二重定義を防止するため `wrangler.json` を削除して一本化。
 * **PWA対応およびオリジナルアプリアイコンの実装 (`feat/app-icon-and-pwa`)**:
