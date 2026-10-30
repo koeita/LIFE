@@ -6509,6 +6509,49 @@ function returnToMainMenu() {
   showScreen('screen-start');
 }
 
+function getSettingsEvent() {
+  const soundText = prefs.sound ? 'ON' : 'OFF';
+  const soundAction = prefs.sound ? 'オフにする' : 'オンにする';
+  return {
+    badge: 'SETTINGS',
+    icon: '',
+    title: '設定',
+    text: `現在の効果音：${soundText}\n効果音の切り替えや、現在の進行状況をセーブしてメインメニューへ戻ることができます。`,
+    choices: [
+      {
+        label: `効果音：${soundText}（タップして${soundAction}）`,
+        silent: true,
+        fn: () => {
+          prefs.sound = !prefs.sound;
+          savePrefs();
+          if (prefs.sound) playSE('good');
+          return { then: getSettingsEvent() };
+        }
+      },
+      {
+        label: 'メインメニューへ戻る（セーブして中断）',
+        dangerFill: true,
+        silent: true,
+        fn: () => {
+          returnToMainMenu();
+          return '';
+        }
+      },
+      {
+        label: 'ゲームに戻る',
+        cancel: true,
+        fn: () => ''
+      }
+    ]
+  };
+}
+
+function openSettingsModal() {
+  if (busy) return;
+  playSE('click');
+  runEvent(getSettingsEvent());
+}
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.onclick = () => switchTab(btn.dataset.tab);
 });
@@ -6522,7 +6565,12 @@ $('#btn-collection').onclick = () => openCollectionModal();
 const albumBtn = $('#btn-open-album');
 if (albumBtn) albumBtn.onclick = () => openAlbumModal();
 $('#btn-share').onclick = () => openShareModal();
-$('#btn-sound').onclick = () => { prefs.sound = !prefs.sound; savePrefs(); if (prefs.sound) playSE('good'); };
+if ($('#btn-sound')) {
+  $('#btn-sound').onclick = () => { prefs.sound = !prefs.sound; savePrefs(); if (prefs.sound) playSE('good'); };
+}
+if ($('#btn-settings')) {
+  $('#btn-settings').onclick = () => openSettingsModal();
+}
 $('#input-name').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
 $('#btn-random-name').onclick = () => {
   playSE('click');
