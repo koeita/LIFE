@@ -81,6 +81,20 @@ button {
   background: transparent;
 }
 
+/* ===== iOS PWA 上部システムブラー（強制すりガラス・ぼかし帯）無効化 ===== */
+.ios-blur-fix {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  z-index: 2147483647;
+  pointer-events: none;
+  background-color: var(--bg);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
 /* ===== 背景（手帳・方眼紙ペーパー） ===== */
 .bg {
   position: fixed;
